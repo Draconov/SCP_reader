@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3 — Archive Snapshot Workflow Fix
+
+- fixed Archive Sync failing after successful SCP synchronization because `git switch --orphan` was run in the dirty main checkout
+- publish generated archive snapshots from an isolated temporary Git worktree instead
+- preserve the synchronized main checkout while force-updating only the generated `archive-snapshot` branch
+- added an end-to-end regression test covering the exact dirty-worktree failure state
+
 ## 0.1.2 — Phase 1 Complete
 
 - completed immersion-aware credential authentication for Low, Standard, and Full immersion modes

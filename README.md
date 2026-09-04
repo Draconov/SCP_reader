@@ -4,7 +4,7 @@ An immersive, local-first SCP Foundation archive reader that makes the site feel
 
 This repository is intended to be published as **`SCP_reader`** on GitHub and deployed with **GitHub Pages**. It has no user-account backend: researcher careers live in the browser and can be exported as human-readable `.scp-id` files.
 
-## Current release: 0.1.2 — Phase 1 Complete
+## Current release: 0.1.3 — Archive Snapshot Workflow Fix
 
 Phase 1 is now complete. The included implementation provides:
 
@@ -35,7 +35,7 @@ The full approved long-term design and 12-phase roadmap are in [`docs/superpower
 
 ## Phase 1 completion status
 
-Phase 1 is frozen at **0.1.2** and ready for Phase 2 development. Its acceptance path is:
+Phase 1 remains complete and is patched at **0.1.3**, ready for Phase 2 development. Its acceptance path is:
 
 ```text
 OPEN WEBSITE → INSERT / ISSUE ID → AUTHENTICATE → SEARCH ARCHIVE → OPEN RECORD
@@ -109,7 +109,7 @@ The normalizer:
 4. The first push to `main` automatically runs **Archive Sync** for the Phase-1 seed manifest.
 5. **Deploy GitHub Pages** first publishes the app shell, then refreshes again when the generated archive snapshot is ready.
 
-You can still run **Archive Sync** manually for a single slug or the seed manifest. The scheduled archive job also runs twice weekly and force-refreshes a generated `archive-snapshot` branch so normal source history does not fill with generated SCP JSON churn.
+You can still run **Archive Sync** manually for a single slug or the seed manifest. The scheduled archive job also runs twice weekly and force-refreshes a generated `archive-snapshot` branch from an isolated temporary Git worktree, so generated SCP JSON never requires switching branches in the dirty main checkout and normal source history does not fill with generated archive churn.
 
 ## Researcher profiles
 

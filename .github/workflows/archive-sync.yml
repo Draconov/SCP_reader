@@ -36,19 +36,6 @@ jobs:
           else
             node tools/archive-sync/cli.mjs --seeds content/archive-seeds.json
           fi
-      - name: Prepare archive snapshot
+      - name: Publish archive snapshot
         shell: bash
-        run: |
-          rm -rf /tmp/scp-archive-snapshot
-          mkdir -p /tmp/scp-archive-snapshot/public
-          cp -R public/archive /tmp/scp-archive-snapshot/public/archive
-          cp LICENSE.md /tmp/scp-archive-snapshot/LICENSE.md
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch --orphan archive-snapshot-temp
-          git rm -rf .
-          cp -R /tmp/scp-archive-snapshot/. .
-          git add -f public/archive
-          git add LICENSE.md
-          git commit -m "chore: refresh SCP archive snapshot"
-          git push --force origin HEAD:archive-snapshot
+        run: bash tools/archive-sync/publish-snapshot.sh
