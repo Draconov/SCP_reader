@@ -1,3 +1,10 @@
+function decodeNumericEntity(_match, token) {
+  const hexadecimal = token[0]?.toLowerCase() === 'x';
+  const codePoint = Number.parseInt(hexadecimal ? token.slice(1) : token, hexadecimal ? 16 : 10);
+  if (!Number.isInteger(codePoint) || codePoint <= 0 || codePoint > 0x10ffff || (codePoint >= 0xd800 && codePoint <= 0xdfff)) return '\uFFFD';
+  return String.fromCodePoint(codePoint);
+}
+
 function decodeEntities(value) {
   return value
     .replaceAll('&quot;', '"')
@@ -5,8 +12,14 @@ function decodeEntities(value) {
     .replaceAll('&apos;', "'")
     .replaceAll('&lt;', '<')
     .replaceAll('&gt;', '>')
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&ndash;', '–')
+    .replaceAll('&mdash;', '—')
+    .replaceAll('&hellip;', '…')
+    .replaceAll('&times;', '×')
+    .replaceAll('&middot;', '·')
     .replaceAll('&amp;', '&')
-    .replaceAll('&nbsp;', ' ');
+    .replace(/&#(x[0-9a-f]+|\d+);/gi, decodeNumericEntity);
 }
 
 function stripTags(value) {
@@ -58,6 +71,28 @@ function sanitizeContent(content, sourceUrl) {
     }
   });
   return html;
+}
+
+function buildSummary(sanitized, slug) {
+  let text = stripTags(sanitized)
+    .replace(/\[\s*(?:MEDIA OMITTED FROM LOCAL ARCHIVE|SPECIALIZED EMBED OMITTED)[^\]]*\]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (/^scp-\d/i.test(slug)) {
+    const itemMarker = /\bItem\s*#\s*:\s*SCP-[A-Z0-9-]+\b/i.exec(text);
+    const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const titleMarker = new RegExp(`\\b${escapedSlug}\\s*:`, 'i').exec(text);
+    const marker = itemMarker ?? titleMarker;
+    if (marker) text = text.slice(marker.index);
+  }
+
+  text = text
+    .replace(/^rating:\s*[+\-]?\d+(?:\s*[+\-–—×x]\s*)*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return text.slice(0, 320);
 }
 
 function extractTags(html) {
@@ -133,7 +168,7 @@ export function normalizeWikiPage({ slug, url, html, fetchedAt }) {
     slug,
     title,
     type: classify(slug, tags),
-    summary: plain.slice(0, 320),
+    summary: buildSummary(sanitized, slug),
     tags,
     clearance: deriveClearance(tags, objectClass, slug),
     renderer: specialized ? 'specialized' : 'foundation-document',

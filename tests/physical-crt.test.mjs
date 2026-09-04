@@ -16,7 +16,7 @@ test('Physical CRT mode defines a dedicated glass and bezel treatment', () => {
   assert.match(css, /physical-crt[\s\S]*\.workstation-shell::after/);
 });
 
-test('visual release advances the service-worker cache so existing installs receive the new CSS', () => {
+test('content cleanup advances the service-worker cache so existing installs receive the updated app', () => {
   const sw = fs.readFileSync(new URL('../public/service-worker.js', import.meta.url), 'utf8');
-  assert.match(sw, /CACHE_VERSION = 'scp-reader-v3'/);
+  assert.match(sw, /CACHE_VERSION = 'scp-reader-v4'/);
 });
