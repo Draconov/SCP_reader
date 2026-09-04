@@ -1,0 +1,9 @@
+dist/
+.test-build/
+node_modules/
+.DS_Store
+*.log
+public/archive/documents/*.json
+public/archive/revisions.json
+public/archive/sync-report.json
+!public/archive/index.json

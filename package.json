@@ -1,0 +1,15 @@
+{
+  "name": "scp-reader",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node tools/dev-server.mjs",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit --pretty false",
+    "test:build": "node tools/clean.mjs .test-build && tsc -p tsconfig.test.json --pretty false",
+    "test": "npm run test:build && node --test tests/**/*.test.mjs",
+    "build": "node tools/build.mjs",
+    "archive:sync": "node tools/archive-sync/cli.mjs",
+    "archive:sync:seed": "node tools/archive-sync/cli.mjs --seeds content/archive-seeds.json"
+  }
+}

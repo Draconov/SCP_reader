@@ -1,0 +1,63 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: ["Archive Sync"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Overlay latest generated archive when available
+        shell: bash
+        run: |
+          if git fetch origin archive-snapshot:refs/remotes/origin/archive-snapshot; then
+            rm -rf /tmp/scp-archive
+            mkdir -p /tmp/scp-archive
+            git archive origin/archive-snapshot public/archive | tar -x -C /tmp/scp-archive
+            rm -rf public/archive
+            cp -R /tmp/scp-archive/public/archive public/archive
+          else
+            echo "No archive-snapshot branch yet; using repository fallback index."
+          fi
+      - run: npm ci
+      - run: npm install --global typescript@5.9.2
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

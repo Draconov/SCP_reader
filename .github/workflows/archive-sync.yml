@@ -1,0 +1,52 @@
+name: Archive Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Optional single SCP Wiki slug, e.g. scp-049. Leave blank for seed manifest.'
+        required: false
+        type: string
+  schedule:
+    - cron: '17 3 * * 2,5'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Synchronize SCP Wiki records
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.slug }}" ]; then
+            node tools/archive-sync/cli.mjs --slug "${{ inputs.slug }}"
+          else
+            node tools/archive-sync/cli.mjs --seeds content/archive-seeds.json
+          fi
+      - name: Prepare archive snapshot
+        shell: bash
+        run: |
+          rm -rf /tmp/scp-archive-snapshot
+          mkdir -p /tmp/scp-archive-snapshot/public
+          cp -R public/archive /tmp/scp-archive-snapshot/public/archive
+          cp LICENSE.md /tmp/scp-archive-snapshot/LICENSE.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --orphan archive-snapshot-temp
+          git rm -rf .
+          cp -R /tmp/scp-archive-snapshot/. .
+          git add -f public/archive
+          git add LICENSE.md
+          git commit -m "chore: refresh SCP archive snapshot"
+          git push --force origin HEAD:archive-snapshot

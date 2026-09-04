@@ -1,0 +1,10 @@
+{
+  "name": "SCP Foundation Research Terminal",
+  "short_name": "SCP Terminal",
+  "description": "Immersive local-first SCP Foundation archive reader and researcher simulation.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#050806",
+  "theme_color": "#07120a",
+  "icons": [{ "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "orientation-r-0001",
+  "title": "Orientation R-0001",
+  "briefing": "Research Administration requires all newly issued personnel to demonstrate basic archive handling before additional casework is assigned.",
+  "objectives": [
+    { "id": "open-record", "label": "Open one Foundation archive record", "action": "open-record" },
+    { "id": "add-note", "label": "Add a private research note", "action": "add-note" },
+    { "id": "bookmark", "label": "Bookmark an archive record", "action": "bookmark" },
+    { "id": "open-mail", "label": "Review Foundation Mail", "action": "open-mail" },
+    { "id": "open-terminal", "label": "Open the command terminal", "action": "open-terminal" }
+  ]
+}
