@@ -4,9 +4,9 @@ An immersive, local-first SCP Foundation archive reader that makes the site feel
 
 This repository is intended to be published as **`SCP_reader`** on GitHub and deployed with **GitHub Pages**. It has no user-account backend: researcher careers live in the browser and can be exported as human-readable `.scp-id` files.
 
-## Current release: 0.1.1 — Physical CRT visual mode
+## Current release: 0.1.2 — Phase 1 Complete
 
-The included Phase-1 implementation provides:
+Phase 1 is now complete. The included implementation provides:
 
 - secure-looking **INSERT FOUNDATION ID** startup flow
 - multiple local researcher profiles using IndexedDB, with localStorage fallback
@@ -17,19 +17,32 @@ The included Phase-1 implementation provides:
 - sanitized document viewer with canonical content separated from simulation metadata
 - attribution/source panel for every synchronized record
 - automatic media omission unless redistribution has been explicitly handled
-- bookmarks, private research notes, and access history
+- bookmarks with a dedicated saved-record browser, private research notes, and access history
 - Orientation R-0001 assignment
 - Foundation Mail starter simulation
-- command terminal (`HELP`, `OPEN`, `FIND`, `LIST`, `PROFILE`, `CLEARANCE`, `HISTORY`, `NOTES`, `BOOKMARKS`, `LOGOUT`)
+- immersion-aware credential authentication with instant / standard / full sequences and a skip control
+- command terminal (`HELP`, `OPEN`, `FIND`, `SOURCE`, `RELATED`, `LIST`, `PROFILE`, `CLEARANCE`, `HISTORY`, `NOTES`, `BOOKMARKS`, `LOGOUT`)
 - Modern / Foundation Hybrid / Physical CRT / Legacy Terminal / Archive Terminal interface modes
 - green / amber / cold-white / blue / high-contrast palettes
 - configurable scanlines, glow, curvature, flicker, reduce-motion, font scale, and sound preference
 - opt-in **Physical CRT** mode with a dark hardware bezel, curved glass treatment, vignette, denser terminal layout, and localized phosphor scanlines
-- service-worker cache so previously opened files remain available offline
+- service-worker cache so previously opened files remain available offline, with live online/local-archive status and cache clearing
 - GitHub Actions for CI, periodic archive synchronization, and Pages deployment
+- keyboard-first workstation navigation and complete scrollable Field Terminal navigation on mobile
 - dependency-free runtime/build pipeline: TypeScript + browser APIs + Node 22 tooling
 
 The full approved long-term design and 12-phase roadmap are in [`docs/superpowers/specs/2026-09-04-scp-research-terminal-design.md`](docs/superpowers/specs/2026-09-04-scp-research-terminal-design.md).
+
+## Phase 1 completion status
+
+Phase 1 is frozen at **0.1.2** and ready for Phase 2 development. Its acceptance path is:
+
+```text
+OPEN WEBSITE → INSERT / ISSUE ID → AUTHENTICATE → SEARCH ARCHIVE → OPEN RECORD
+→ BOOKMARK / NOTE → LOG OUT → RETURN WITH SAME ID → USE CACHED RECORDS OFFLINE
+```
+
+Phase 2 starts with full-Wiki discovery, incremental revision synchronization, richer page classification, relationship indexing, and the Specialized Archive Module pipeline.
 
 ## Quick start
 
@@ -86,17 +99,17 @@ The normalizer:
 - records revision and licensing/citation metadata when present
 - detects presentation-heavy pages and marks them for the future Specialized Archive Module layer
 
-`content/archive-seeds.json` currently contains a representative starter set. The full-Wiki discovery/incremental mirror is a Phase-2 feature; the current CLI already supports arbitrary individual page slugs and is the base for that expansion.
+`content/archive-seeds.json` contains the 10-record representative Phase-1 starter set, and every seed is visible in the fallback archive before the first sync. The full-Wiki discovery/incremental mirror is a Phase-2 feature; the current CLI already supports arbitrary individual page slugs and is the base for that expansion.
 
 ## GitHub Pages publishing
 
 1. Create a GitHub repository named **`SCP_reader`**.
 2. Push this repository to `main`.
 3. In **Settings → Pages**, set **Source** to **GitHub Actions**.
-4. Run **Archive Sync** once from the Actions tab to generate the first canonical archive snapshot.
-5. The **Deploy GitHub Pages** workflow deploys the static terminal.
+4. The first push to `main` automatically runs **Archive Sync** for the Phase-1 seed manifest.
+5. **Deploy GitHub Pages** first publishes the app shell, then refreshes again when the generated archive snapshot is ready.
 
-The scheduled archive job runs twice weekly and force-refreshes a generated `archive-snapshot` branch so normal source history does not fill with generated SCP JSON churn.
+You can still run **Archive Sync** manually for a single slug or the seed manifest. The scheduled archive job also runs twice weekly and force-refreshes a generated `archive-snapshot` branch so normal source history does not fill with generated SCP JSON churn.
 
 ## Researcher profiles
 

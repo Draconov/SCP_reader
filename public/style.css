@@ -371,3 +371,26 @@ a { color:var(--accent); }
   :root[data-interface-mode='physical-crt'] .main-window { min-height:calc(100vh - 155px); padding:9px; }
   :root[data-interface-mode='physical-crt'] .window-header { top:-9px; margin:-9px -9px 9px; }
 }
+
+/* Phase 1 completion: authentication, bookmarks, maintenance, and dense field navigation */
+.auth-terminal { min-height:360px; display:flex; flex-direction:column; gap:14px; }
+.auth-output { min-height:180px; flex:1; padding:16px; border:1px solid var(--border); background:color-mix(in srgb, var(--bg) 88%, transparent); }
+.auth-output .terminal-line { padding:.22rem 0; letter-spacing:.035em; }
+.auth-output .auth-granted { font-weight:800; color:var(--accent); text-shadow:0 0 12px var(--accent); }
+.bookmark-row { cursor:pointer; }
+.settings-maintenance { margin-top:18px; }
+.settings-maintenance h3 { margin-top:0; }
+.button.danger, button.danger { border-color:var(--danger); color:var(--danger); }
+
+@media (max-width: 760px) {
+  .mobile-nav {
+    grid-template-columns:none;
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(72px, 1fr);
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+    scrollbar-width:thin;
+  }
+  .mobile-nav-button { min-width:72px; }
+  .auth-terminal { min-height:0; }
+}

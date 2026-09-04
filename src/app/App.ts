@@ -1,4 +1,6 @@
 import { loadArchiveDocument, loadArchiveIndex } from '../archive/api.js';
+import { authStepDelay, buildAuthSequence } from './immersion.js';
+import { resolveShortcut } from './shortcuts.js';
 import { searchArchive } from '../archive/search.js';
 import { ORIENTATION_ASSIGNMENT } from '../assignments/catalog.js';
 import { completeObjective, createAssignmentState, isAssignmentComplete } from '../assignments/runtime.js';
@@ -6,12 +8,13 @@ import { downloadProfile, readProfileFile } from '../researcher/export.js';
 import { addHistory, issueProfile } from '../researcher/profile.js';
 import { createProfileStore, type ProfileStore } from '../researcher/store.js';
 import { applySettingsToDocument, normalizeSettings } from '../settings/settings.js';
+import { clearReaderCaches, networkStatusLabel } from '../offline/status.js';
 import { executeCommand } from '../terminal/commands.js';
 import { parseCommand } from '../terminal/parser.js';
 import type { ArchiveDocument, ArchiveIndexEntry, AssignmentState, ResearchNote, ResearcherProfile } from '../shared/types.js';
 import { button, clear, el, formatTime } from './dom.js';
 
-export type ViewName = 'archive' | 'assignments' | 'mail' | 'notes' | 'terminal' | 'profile' | 'settings';
+export type ViewName = 'archive' | 'assignments' | 'mail' | 'bookmarks' | 'notes' | 'terminal' | 'profile' | 'settings';
 
 export class App {
   private root: HTMLElement;
@@ -23,6 +26,7 @@ export class App {
   private searchQuery = '';
   private terminalLines: string[] = ['FOUNDATION COMMAND INTERFACE READY. TYPE HELP.'];
   private status = 'ARCHIVE NODE: INITIALIZING';
+  private online = typeof navigator === 'undefined' ? true : navigator.onLine;
 
   constructor(root: HTMLElement, store = createProfileStore()) {
     this.root = root;
@@ -32,6 +36,11 @@ export class App {
   async start(): Promise<void> {
     this.archive = await loadArchiveIndex();
     this.status = `ARCHIVE NODE: ONLINE / ${this.archive.length} INDEXED RECORDS`;
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => this.handleNetworkChange(true));
+      window.addEventListener('offline', () => this.handleNetworkChange(false));
+      window.addEventListener('keydown', (event) => this.handleGlobalShortcut(event));
+    }
     this.renderGate(await this.store.list());
   }
 
@@ -170,9 +179,49 @@ export class App {
     await this.store.setActiveId(this.profile.researcher.personnelId);
     await this.persist();
     this.applyProfileAppearance();
+    const sequence = buildAuthSequence(this.profile, this.profile.settings.immersion);
+    if (sequence.length) await this.renderAuthentication(sequence, authStepDelay(this.profile.settings.immersion));
     this.currentView = 'archive';
     this.currentDocument = null;
     this.renderWorkstation();
+  }
+
+  private renderAuthentication(lines: string[], delay: number): Promise<void> {
+    return new Promise((resolve) => {
+      clear(this.root);
+      const gate = el('main', 'id-gate auth-gate');
+      const terminal = el('section', 'credential-terminal panel auth-terminal');
+      terminal.append(el('div', 'foundation-mark', 'SCP'), el('h1', '', 'CREDENTIAL AUTHENTICATION'), el('p', 'eyebrow', 'FOUNDATION SECURE RESEARCH NETWORK'));
+      const output = el('div', 'auth-output terminal-console');
+      terminal.append(output);
+      const skip = button('SKIP AUTHENTICATION', 'button secondary compact');
+      terminal.append(skip);
+      gate.append(terminal);
+      this.root.append(gate);
+
+      let index = 0;
+      let finished = false;
+      let timer = 0;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        if (timer) window.clearTimeout(timer);
+        resolve();
+      };
+      const step = () => {
+        if (finished) return;
+        if (index >= lines.length) {
+          timer = window.setTimeout(finish, Math.max(80, delay));
+          return;
+        }
+        output.append(el('div', `terminal-line ${index === lines.length - 1 ? 'auth-granted' : ''}`, lines[index]));
+        output.scrollTop = output.scrollHeight;
+        index += 1;
+        timer = window.setTimeout(step, delay);
+      };
+      skip.addEventListener('click', finish);
+      step();
+    });
   }
 
   private renderWorkstation(): void {
@@ -189,7 +238,7 @@ export class App {
 
     const workspace = el('div', 'workspace');
     const sidebar = el('nav', 'sidebar');
-    const navItems: Array<[ViewName, string]> = [['archive', 'ARCHIVE'], ['assignments', 'ASSIGNMENTS'], ['mail', 'MAIL'], ['notes', 'NOTES'], ['terminal', 'TERMINAL'], ['profile', 'PERSONNEL'], ['settings', 'SYSTEM']];
+    const navItems: Array<[ViewName, string]> = [['archive', 'ARCHIVE'], ['assignments', 'ASSIGNMENTS'], ['mail', 'MAIL'], ['bookmarks', 'BOOKMARKS'], ['notes', 'NOTES'], ['terminal', 'TERMINAL'], ['profile', 'PERSONNEL'], ['settings', 'SYSTEM']];
     for (const [view, label] of navItems) {
       const nav = button(label, `nav-button ${this.currentView === view ? 'active' : ''}`);
       nav.addEventListener('click', () => this.openView(view));
@@ -206,13 +255,17 @@ export class App {
     shell.append(workspace);
 
     const mobileNav = el('nav', 'mobile-nav');
-    for (const [view, label] of navItems.slice(0, 5)) {
+    const mobileNavItems: Array<[ViewName, string]> = [
+      ['archive', 'FILES'], ['assignments', 'TASKS'], ['mail', 'MAIL'], ['bookmarks', 'SAVED'],
+      ['notes', 'NOTES'], ['terminal', 'TERM'], ['profile', 'ID'], ['settings', 'SYSTEM']
+    ];
+    for (const [view, label] of mobileNavItems) {
       const nav = button(label, `mobile-nav-button ${this.currentView === view ? 'active' : ''}`);
       nav.addEventListener('click', () => this.openView(view));
       mobileNav.append(nav);
     }
     shell.append(mobileNav);
-    shell.append(el('footer', 'statusbar', `${this.status}  ·  ${new Date().toLocaleTimeString()}  ·  LOCAL PROFILE AUTOSAVE`));
+    shell.append(el('footer', 'statusbar', `${this.status}  ·  ${networkStatusLabel(this.online)}  ·  ${new Date().toLocaleTimeString()}  ·  LOCAL PROFILE AUTOSAVE`));
     this.root.append(shell);
   }
 
@@ -232,6 +285,7 @@ export class App {
     switch (this.currentView) {
       case 'assignments': this.renderAssignments(container); break;
       case 'mail': this.renderMail(container); break;
+      case 'bookmarks': this.renderBookmarks(container); break;
       case 'notes': this.renderNotes(container); break;
       case 'terminal': this.renderTerminal(container); break;
       case 'profile': this.renderProfile(container); break;
@@ -414,6 +468,27 @@ export class App {
     container.append(list);
   }
 
+  private renderBookmarks(container: HTMLElement): void {
+    if (!this.profile) return;
+    container.append(this.windowHeader('BOOKMARKED RECORDS', `${this.profile.bookmarks.length} SAVED`));
+    const entries = this.profile.bookmarks
+      .map((id) => this.archive.find((entry) => entry.id === id))
+      .filter((entry): entry is ArchiveIndexEntry => Boolean(entry));
+    if (!entries.length) {
+      container.append(el('p', 'empty-state', 'NO BOOKMARKED FOUNDATION RECORDS'));
+      return;
+    }
+    const list = el('div', 'archive-results');
+    for (const entry of entries) {
+      const row = el('button', 'archive-row bookmark-row');
+      row.type = 'button';
+      row.innerHTML = `<span class="record-id">${this.escape(entry.title)}</span><span class="record-type">${entry.type.toUpperCase()}</span><span class="record-class">${this.escape(entry.objectClass ?? 'UNCLASSIFIED')}</span><span class="record-clearance">L${entry.clearance}</span><span class="record-summary">${this.escape(entry.summary)}</span>`;
+      row.addEventListener('click', () => { this.currentView = 'archive'; void this.openDocument(entry.id); });
+      list.append(row);
+    }
+    container.append(list);
+  }
+
   private renderNotes(container: HTMLElement): void {
     if (!this.profile) return;
     container.append(this.windowHeader('RESEARCH NOTEBOOK', 'LOCAL PERSONNEL DATA'));
@@ -449,6 +524,7 @@ export class App {
       this.terminalLines.push(...result.output);
       if (result.action?.type === 'open-record') { this.currentView = 'archive'; void this.openDocument(result.action.id); return; }
       if (result.action?.type === 'show-view') { this.openView(result.action.view as ViewName); return; }
+      if (result.action?.type === 'related-records') { void this.showRelatedInTerminal(result.action.id); return; }
       if (result.action?.type === 'logout') { void this.logout(); return; }
       this.renderWorkstation();
       requestAnimationFrame(() => (document.querySelector('.terminal-input') as HTMLInputElement | null)?.focus());
@@ -456,6 +532,23 @@ export class App {
     terminal.append(prompt);
     container.append(terminal);
     requestAnimationFrame(() => input.focus());
+  }
+
+  private async showRelatedInTerminal(id: string): Promise<void> {
+    try {
+      const doc = await loadArchiveDocument(id, this.archive);
+      const related = doc.links
+        .map((slug) => this.archive.find((entry) => entry.slug === slug))
+        .filter((entry): entry is ArchiveIndexEntry => Boolean(entry))
+        .slice(0, 20);
+      this.terminalLines.push(...(related.length
+        ? related.map((entry) => `${entry.title.padEnd(14)} L${entry.clearance} ${entry.summary.slice(0, 52)}`)
+        : ['NO INDEXED RELATED RECORDS.']));
+    } catch {
+      this.terminalLines.push('RELATIONSHIP LOOKUP FAILED.');
+    }
+    this.renderWorkstation();
+    requestAnimationFrame(() => (document.querySelector('.terminal-input') as HTMLInputElement | null)?.focus());
   }
 
   private renderProfile(container: HTMLElement): void {
@@ -531,7 +624,73 @@ export class App {
     range.addEventListener('input', () => { const fontScale = Number(range.value); value.textContent = `${Math.round(fontScale * 100)}%`; this.profile!.settings = normalizeSettings({ ...this.profile!.settings, fontScale }); this.applyProfileAppearance(); void this.persist(); });
     font.append(range, value); form.append(font);
     container.append(form);
-    container.append(el('p', 'muted settings-note', 'Accessibility settings override conflicting immersion effects. Researcher career data is unaffected by interface style.'));
+
+    const maintenance = el('section', 'panel inset settings-maintenance');
+    maintenance.append(el('h3', '', 'LOCAL TERMINAL MAINTENANCE'));
+    const maintenanceButtons = el('div', 'button-row');
+    const clearCache = button('CLEAR DOCUMENT CACHE', 'button secondary');
+    clearCache.addEventListener('click', () => {
+      void clearReaderCaches().then((count) => {
+        this.status = `LOCAL ARCHIVE CACHE CLEARED / ${count} CACHE(S) REMOVED`;
+        this.renderWorkstation();
+      });
+    });
+    const deleteProfile = button('DELETE LOCAL PERSONNEL ID', 'button danger');
+    deleteProfile.addEventListener('click', () => void this.deleteCurrentProfile());
+    maintenanceButtons.append(clearCache, deleteProfile);
+    maintenance.append(maintenanceButtons, el('p', 'muted', 'Clearing the document cache does not delete your researcher profile. Deleting the local ID is permanent unless you exported a .scp-id backup.'));
+    container.append(maintenance);
+    container.append(el('p', 'muted settings-note', 'Keyboard: Ctrl+K search · Ctrl+A assignments · Ctrl+M mail · Ctrl+N notes · Ctrl+Shift+P terminal · Ctrl+, settings · Alt+Left back. Accessibility settings override conflicting immersion effects.'));
+  }
+
+  private handleNetworkChange(online: boolean): void {
+    this.online = online;
+    if (!online) this.status = 'FOUNDATION NETWORK UNAVAILABLE / USING LOCAL ARCHIVE CACHE';
+    else if (this.profile) this.status = `ARCHIVE NODE: ONLINE / ${this.archive.length} INDEXED RECORDS`;
+    if (this.profile) this.renderWorkstation();
+  }
+
+  private handleGlobalShortcut(event: KeyboardEvent): void {
+    if (!this.profile) return;
+    const target = event.target;
+    const editable = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || (target instanceof HTMLElement && target.isContentEditable);
+    const shortcut = resolveShortcut({
+      key: event.key,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+      editable
+    });
+    if (!shortcut) return;
+    event.preventDefault();
+    if (shortcut === 'back') {
+      if (this.currentDocument) {
+        this.currentDocument = null;
+        this.currentView = 'archive';
+        this.renderWorkstation();
+      }
+      return;
+    }
+    if (shortcut === 'archive-search') {
+      this.currentView = 'archive';
+      this.currentDocument = null;
+      this.renderWorkstation();
+      requestAnimationFrame(() => (document.querySelector('.archive-search') as HTMLInputElement | null)?.focus());
+      return;
+    }
+    this.openView(shortcut);
+  }
+
+  private async deleteCurrentProfile(): Promise<void> {
+    if (!this.profile) return;
+    const id = this.profile.researcher.personnelId;
+    if (!window.confirm(`DELETE LOCAL PERSONNEL ID ${id}?\n\nThis cannot be undone unless you exported a .scp-id backup.`)) return;
+    await this.store.remove(id);
+    await this.store.setActiveId(null);
+    this.profile = null;
+    this.currentDocument = null;
+    this.renderGate(await this.store.list(), `LOCAL PERSONNEL RECORD ${id} DELETED`);
   }
 
   private windowHeader(title: string, meta: string): HTMLElement {
