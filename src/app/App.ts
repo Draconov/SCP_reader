@@ -501,7 +501,7 @@ export class App {
       label.append(el('span', '', labelText));
       const select = el('select', 'select-input');
       for (const option of options) {
-        const node = el('option', '', option.toUpperCase());
+        const node = el('option', '', option.replace(/-/g, ' ').toUpperCase());
         node.value = option;
         node.selected = this.profile!.settings[key] === option;
         select.append(node);
@@ -510,7 +510,7 @@ export class App {
       label.append(select);
       form.append(label);
     };
-    addSelect('INTERFACE STYLE', 'interfaceMode', ['modern', 'hybrid', 'legacy', 'archive']);
+    addSelect('INTERFACE STYLE', 'interfaceMode', ['modern', 'hybrid', 'physical-crt', 'legacy', 'archive']);
     addSelect('IMMERSION LEVEL', 'immersion', ['low', 'standard', 'full']);
     addSelect('PHOSPHOR / PALETTE', 'palette', ['green', 'amber', 'cold', 'blue', 'high-contrast']);
     for (const [labelText, key] of [['SCANLINES', 'scanlines'], ['PHOSPHOR GLOW', 'glow'], ['CRT CURVATURE', 'curvature'], ['FLICKER', 'flicker'], ['REDUCE MOTION', 'reduceMotion'], ['SYSTEM SOUND', 'sound']] as const) {

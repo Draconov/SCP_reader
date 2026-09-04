@@ -1,4 +1,4 @@
-export type InterfaceMode = 'modern' | 'hybrid' | 'legacy' | 'archive';
+export type InterfaceMode = 'modern' | 'hybrid' | 'physical-crt' | 'legacy' | 'archive';
 export type ImmersionLevel = 'low' | 'standard' | 'full';
 export type PaletteName = 'green' | 'amber' | 'cold' | 'blue' | 'high-contrast';
 export type ResearcherRank = 'Research Assistant' | 'Junior Researcher' | 'Researcher' | 'Senior Researcher' | 'Lead Researcher' | 'Principal Researcher';

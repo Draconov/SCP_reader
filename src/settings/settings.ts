@@ -1,7 +1,7 @@
 import { DEFAULT_SETTINGS } from '../shared/constants.js';
 import type { ImmersionLevel, InterfaceMode, PaletteName, ResearcherSettings } from '../shared/types.js';
 
-const interfaceModes: InterfaceMode[] = ['modern', 'hybrid', 'legacy', 'archive'];
+const interfaceModes: InterfaceMode[] = ['modern', 'hybrid', 'physical-crt', 'legacy', 'archive'];
 const immersionLevels: ImmersionLevel[] = ['low', 'standard', 'full'];
 const palettes: PaletteName[] = ['green', 'amber', 'cold', 'blue', 'high-contrast'];
 

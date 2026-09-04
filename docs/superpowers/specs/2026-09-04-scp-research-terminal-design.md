@@ -472,8 +472,9 @@ Visual style and immersion level are independent settings.
 
 1. **Modern** — contemporary secure workstation, crisp and minimal.
 2. **Foundation Hybrid** — default; modern usability with retro Foundation DNA.
-3. **Legacy Terminal** — strong late-80s/90s terminal aesthetic.
-4. **Archive Terminal** — older, degraded subsystem presentation used for legacy material and special events.
+3. **Physical CRT** — opt-in hardware-framed monitor presentation with subtle convex glass, dark bezel, phosphor bloom, vignette, fine scanlines, and denser terminal layout inspired by real vintage CRT workstations.
+4. **Legacy Terminal** — strong late-80s/90s terminal aesthetic.
+5. **Archive Terminal** — older, degraded subsystem presentation used for legacy material and special events.
 
 ### 17.2 Immersion Levels
 

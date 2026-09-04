@@ -4,7 +4,7 @@ An immersive, local-first SCP Foundation archive reader that makes the site feel
 
 This repository is intended to be published as **`SCP_reader`** on GitHub and deployed with **GitHub Pages**. It has no user-account backend: researcher careers live in the browser and can be exported as human-readable `.scp-id` files.
 
-## Current release: 0.1.0 — Terminal MVP
+## Current release: 0.1.1 — Physical CRT visual mode
 
 The included Phase-1 implementation provides:
 
@@ -21,9 +21,10 @@ The included Phase-1 implementation provides:
 - Orientation R-0001 assignment
 - Foundation Mail starter simulation
 - command terminal (`HELP`, `OPEN`, `FIND`, `LIST`, `PROFILE`, `CLEARANCE`, `HISTORY`, `NOTES`, `BOOKMARKS`, `LOGOUT`)
-- Modern / Foundation Hybrid / Legacy Terminal / Archive Terminal interface modes
+- Modern / Foundation Hybrid / Physical CRT / Legacy Terminal / Archive Terminal interface modes
 - green / amber / cold-white / blue / high-contrast palettes
 - configurable scanlines, glow, curvature, flicker, reduce-motion, font scale, and sound preference
+- opt-in **Physical CRT** mode with a dark hardware bezel, curved glass treatment, vignette, denser terminal layout, and localized phosphor scanlines
 - service-worker cache so previously opened files remain available offline
 - GitHub Actions for CI, periodic archive synchronization, and Pages deployment
 - dependency-free runtime/build pipeline: TypeScript + browser APIs + Node 22 tooling
