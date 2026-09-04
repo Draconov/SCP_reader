@@ -69,3 +69,19 @@ test('snapshot publisher preserves dirty main worktree and pushes generated arch
   const missingMainOnly = spawnSync('git', ['--git-dir', remote, 'cat-file', '-e', 'archive-snapshot:keep.txt'], { encoding: 'utf8' });
   assert.notEqual(missingMainOnly.status, 0);
 });
+
+test('Pages deploy waits for Archive Sync instead of also starting directly on main push', () => {
+  const workflow = fs.readFileSync(new URL('../.github/workflows/deploy.yml', import.meta.url), 'utf8');
+  const onBlock = workflow.match(/^on:\n([\s\S]*?)\npermissions:/m)?.[1] ?? '';
+  assert.doesNotMatch(onBlock, /^\s*push:/m);
+  assert.match(onBlock, /workflow_run:/);
+  assert.match(onBlock, /workflows:\s*\["Archive Sync"\]/);
+});
+
+test('Pages fallback deploy is limited to a failed Archive Sync caused by a main push', () => {
+  const workflow = fs.readFileSync(new URL('../.github/workflows/deploy.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /workflow_run\.conclusion == 'success'/);
+  assert.match(workflow, /workflow_run\.conclusion == 'failure'/);
+  assert.match(workflow, /workflow_run\.event == 'push'/);
+  assert.match(workflow, /workflow_run\.head_branch == 'main'/);
+});
