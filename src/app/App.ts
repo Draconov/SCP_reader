@@ -4,14 +4,15 @@ import { resolveShortcut } from './shortcuts.js';
 import { searchArchive } from '../archive/search.js';
 import { ORIENTATION_ASSIGNMENT } from '../assignments/catalog.js';
 import { completeObjective, createAssignmentState, isAssignmentComplete } from '../assignments/runtime.js';
+import { DEFAULT_SETTINGS } from '../shared/constants.js';
 import { downloadProfile, readProfileFile } from '../researcher/export.js';
 import { addHistory, issueProfile } from '../researcher/profile.js';
 import { createProfileStore, type ProfileStore } from '../researcher/store.js';
-import { applySettingsToDocument, normalizeSettings } from '../settings/settings.js';
+import { applySettingsToDocument, getStyleEffects, normalizeSettings } from '../settings/settings.js';
 import { clearReaderCaches, networkStatusLabel } from '../offline/status.js';
 import { executeCommand } from '../terminal/commands.js';
 import { parseCommand } from '../terminal/parser.js';
-import type { ArchiveDocument, ArchiveIndexEntry, AssignmentState, ResearchNote, ResearcherProfile } from '../shared/types.js';
+import type { ArchiveDocument, ArchiveIndexEntry, AssignmentState, InterfaceMode, ResearchNote, ResearcherProfile, StyleEffectSettings } from '../shared/types.js';
 import { button, clear, el, formatTime } from './dom.js';
 
 export type ViewName = 'archive' | 'assignments' | 'mail' | 'bookmarks' | 'notes' | 'terminal' | 'profile' | 'settings';
@@ -27,6 +28,11 @@ export class App {
   private terminalLines: string[] = ['FOUNDATION COMMAND INTERFACE READY. TYPE HELP.'];
   private status = 'ARCHIVE NODE: INITIALIZING';
   private online = typeof navigator === 'undefined' ? true : navigator.onLine;
+  private styleCustomizationMode: InterfaceMode | null = null;
+  private flickerTimer = 0;
+  private flickerPulseTimer = 0;
+  private scanlineTimer = 0;
+  private scanlinePulseTimer = 0;
 
   constructor(root: HTMLElement, store = createProfileStore()) {
     this.root = root;
@@ -51,7 +57,61 @@ export class App {
   }
 
   private applyProfileAppearance(): void {
-    if (this.profile) applySettingsToDocument(this.profile.settings);
+    if (!this.profile) return;
+    applySettingsToDocument(this.profile.settings);
+    this.refreshDynamicStyleEffects();
+  }
+
+  private clearDynamicStyleEffects(): void {
+    const root = document.documentElement;
+    for (const timer of [this.flickerTimer, this.flickerPulseTimer, this.scanlineTimer, this.scanlinePulseTimer]) {
+      if (timer) window.clearTimeout(timer);
+    }
+    this.flickerTimer = 0;
+    this.flickerPulseTimer = 0;
+    this.scanlineTimer = 0;
+    this.scanlinePulseTimer = 0;
+    root.dataset.randomFlickerActive = 'false';
+    root.dataset.scanlineSweepActive = 'false';
+  }
+
+  private refreshDynamicStyleEffects(): void {
+    this.clearDynamicStyleEffects();
+    if (!this.profile) return;
+    const root = document.documentElement;
+    const settings = this.profile.settings;
+    const effects = getStyleEffects(settings);
+    if (settings.interfaceMode !== 'simulated' || settings.reduceMotion) return;
+    if (effects.flicker > 0 && effects.randomEventFrequency > 0) this.scheduleRandomFlicker(effects);
+    if (effects.runningScanline > 0 && effects.randomEventFrequency > 0) this.scheduleRunningScanline(effects);
+    root.dataset.randomFlickerActive = 'false';
+    root.dataset.scanlineSweepActive = 'false';
+  }
+
+  private scheduleRandomFlicker(effects: StyleEffectSettings): void {
+    const frequency = effects.randomEventFrequency / 100;
+    const delay = 2400 + (1 - frequency) * 3600 + Math.random() * 2600;
+    this.flickerTimer = window.setTimeout(() => {
+      document.documentElement.dataset.randomFlickerActive = 'true';
+      const duration = 70 + Math.round(180 * Math.max(0.18, effects.flicker / 100));
+      this.flickerPulseTimer = window.setTimeout(() => {
+        document.documentElement.dataset.randomFlickerActive = 'false';
+        if (this.profile) this.scheduleRandomFlicker(getStyleEffects(this.profile.settings, 'simulated'));
+      }, duration);
+    }, delay);
+  }
+
+  private scheduleRunningScanline(effects: StyleEffectSettings): void {
+    const frequency = effects.randomEventFrequency / 100;
+    const delay = 3600 + (1 - frequency) * 5200 + Math.random() * 3200;
+    this.scanlineTimer = window.setTimeout(() => {
+      document.documentElement.dataset.scanlineSweepActive = 'true';
+      const duration = Math.round(8000 - (effects.runningScanlineSpeed / 100) * 6000);
+      this.scanlinePulseTimer = window.setTimeout(() => {
+        document.documentElement.dataset.scanlineSweepActive = 'false';
+        if (this.profile) this.scheduleRunningScanline(getStyleEffects(this.profile.settings, 'simulated'));
+      }, Math.max(1500, duration));
+    }, delay);
   }
 
   private ensureOrientation(profile: ResearcherProfile): ResearcherProfile {
@@ -267,6 +327,7 @@ export class App {
     shell.append(mobileNav);
     shell.append(el('footer', 'statusbar', `${this.status}  ·  ${networkStatusLabel(this.online)}  ·  ${new Date().toLocaleTimeString()}  ·  LOCAL PROFILE AUTOSAVE`));
     this.root.append(shell);
+    if (this.styleCustomizationMode) this.root.append(this.renderStyleCustomizationModal(this.styleCustomizationMode));
   }
 
   private openView(view: ViewName): void {
@@ -346,7 +407,7 @@ export class App {
 
     if (this.profile.researcher.clearance < doc.clearance && !this.profile.temporaryAccess.includes(doc.id)) {
       const denied = el('section', 'access-denied');
-      denied.append(el('div', 'stamp danger-stamp', 'ACCESS DENIED'), el('h2', '', `LEVEL ${doc.clearance} AUTHORIZATION REQUIRED`), el('p', '', `CURRENT CREDENTIAL: LEVEL ${this.profile.researcher.clearance}`));
+      denied.append(el('div', 'stamp danger-stamp', 'ACCESS DENIED'), el('h2', '', `LEVEL ${doc.clearance} AUTHORIZATION REQUIRED`), el('p', '', `CURRENT CREDENTIAL: LEVEL ${this.profile.researcher.clearance}`), el('p', 'muted', 'This simulated clearance requirement is generated by SCP Research Terminal and is not canonical SCP Wiki metadata.'));
       container.append(denied);
       return;
     }
@@ -589,7 +650,7 @@ export class App {
     if (!this.profile) return;
     container.append(this.windowHeader('SYSTEM CONFIGURATION', 'LOCAL PROFILE SETTINGS'));
     const form = el('section', 'settings-grid');
-    const addSelect = (labelText: string, key: 'interfaceMode' | 'immersion' | 'palette', options: string[]) => {
+    const addSelect = (labelText: string, key: 'immersion' | 'palette', options: string[]) => {
       const label = el('label', 'setting-row');
       label.append(el('span', '', labelText));
       const select = el('select', 'select-input');
@@ -603,10 +664,35 @@ export class App {
       label.append(select);
       form.append(label);
     };
-    addSelect('INTERFACE STYLE', 'interfaceMode', ['modern', 'hybrid', 'physical-crt', 'legacy', 'archive']);
+
+    const styleRow = el('label', 'setting-row style-row');
+    styleRow.append(el('span', '', 'INTERFACE STYLE'));
+    const styleControls = el('div', 'setting-controls');
+    const styleSelect = el('select', 'select-input');
+    for (const option of ['normal', 'simulated'] as const) {
+      const node = el('option', '', option === 'normal' ? 'NORMAL' : 'SIMULATED');
+      node.value = option;
+      node.selected = this.profile.settings.interfaceMode === option;
+      styleSelect.append(node);
+    }
+    styleSelect.addEventListener('change', () => {
+      this.profile!.settings = normalizeSettings({ ...this.profile!.settings, interfaceMode: styleSelect.value as InterfaceMode });
+      this.applyProfileAppearance();
+      void this.persist();
+      this.renderWorkstation();
+    });
+    const customizeButton = button('CUSTOMIZE STYLE', 'button secondary compact');
+    customizeButton.addEventListener('click', () => {
+      this.styleCustomizationMode = this.profile!.settings.interfaceMode;
+      this.renderWorkstation();
+    });
+    styleControls.append(styleSelect, customizeButton);
+    styleRow.append(styleControls);
+    form.append(styleRow);
+
     addSelect('IMMERSION LEVEL', 'immersion', ['low', 'standard', 'full']);
     addSelect('PHOSPHOR / PALETTE', 'palette', ['green', 'amber', 'cold', 'blue', 'high-contrast']);
-    for (const [labelText, key] of [['SCANLINES', 'scanlines'], ['PHOSPHOR GLOW', 'glow'], ['CRT CURVATURE', 'curvature'], ['FLICKER', 'flicker'], ['REDUCE MOTION', 'reduceMotion'], ['SYSTEM SOUND', 'sound']] as const) {
+    for (const [labelText, key] of [['REDUCE MOTION', 'reduceMotion'], ['SYSTEM SOUND', 'sound']] as const) {
       const label = el('label', 'setting-row toggle-row');
       label.append(el('span', '', labelText));
       const input = el('input');
@@ -624,6 +710,7 @@ export class App {
     range.addEventListener('input', () => { const fontScale = Number(range.value); value.textContent = `${Math.round(fontScale * 100)}%`; this.profile!.settings = normalizeSettings({ ...this.profile!.settings, fontScale }); this.applyProfileAppearance(); void this.persist(); });
     font.append(range, value); form.append(font);
     container.append(form);
+    container.append(el('p', 'muted', 'Palettes apply to every interface style. Each style keeps its own effect preset, and CUSTOMIZE STYLE opens a dedicated popup for the currently selected style.'));
 
     const maintenance = el('section', 'panel inset settings-maintenance');
     maintenance.append(el('h3', '', 'LOCAL TERMINAL MAINTENANCE'));
@@ -641,6 +728,98 @@ export class App {
     maintenance.append(maintenanceButtons, el('p', 'muted', 'Clearing the document cache does not delete your researcher profile. Deleting the local ID is permanent unless you exported a .scp-id backup.'));
     container.append(maintenance);
     container.append(el('p', 'muted settings-note', 'Keyboard: Ctrl+K search · Ctrl+A assignments · Ctrl+M mail · Ctrl+N notes · Ctrl+Shift+P terminal · Ctrl+, settings · Alt+Left back. Accessibility settings override conflicting immersion effects.'));
+  }
+
+  private renderStyleCustomizationModal(mode: InterfaceMode): HTMLElement {
+    const backdrop = el('div', 'modal-backdrop');
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop) {
+        this.styleCustomizationMode = null;
+        this.renderWorkstation();
+      }
+    });
+    const modal = el('section', 'modal panel style-customizer');
+    modal.append(this.windowHeader(`${mode === 'normal' ? 'NORMAL' : 'SIMULATED'} STYLE CALIBRATION`, 'LOCAL VISUAL PROFILE'));
+    modal.append(el('p', 'muted', mode === 'simulated'
+      ? 'These controls affect the entire Simulated interface, including login, archive, reader, terminal, and system windows.'
+      : 'These controls affect the entire Normal interface while leaving palette selection separate.'));
+    const body = el('div', 'settings-grid style-customizer-grid');
+    const controls: Array<{ key: keyof StyleEffectSettings; label: string }> = mode === 'simulated'
+      ? [
+          { key: 'glow', label: 'PHOSPHOR GLOW' },
+          { key: 'scanlines', label: 'SCANLINE INTENSITY' },
+          { key: 'curvature', label: 'CRT CURVATURE' },
+          { key: 'vignette', label: 'EDGE VIGNETTE' },
+          { key: 'noise', label: 'STATIC / NOISE' },
+          { key: 'reflection', label: 'GLASS REFLECTION' },
+          { key: 'bezel', label: 'PHYSICAL BEZEL' },
+          { key: 'flicker', label: 'FLICKER INTENSITY' },
+          { key: 'runningScanline', label: 'RUNNING SCANLINE' },
+          { key: 'runningScanlineSpeed', label: 'RUNNING SCANLINE SPEED' },
+          { key: 'randomEventFrequency', label: 'RANDOM EVENT FREQUENCY' },
+          { key: 'density', label: 'TERMINAL DENSITY' }
+        ]
+      : [
+          { key: 'glow', label: 'UI GLOW' },
+          { key: 'scanlines', label: 'SCANLINE INTENSITY' },
+          { key: 'curvature', label: 'SCREEN CURVATURE' },
+          { key: 'flicker', label: 'FLICKER INTENSITY' },
+          { key: 'vignette', label: 'EDGE SHADING' },
+          { key: 'density', label: 'UI DENSITY' }
+        ];
+    const current = getStyleEffects(this.profile!.settings, mode);
+    for (const control of controls) {
+      const row = el('label', 'setting-row range-setting-row');
+      row.append(el('span', '', control.label));
+      const controlWrap = el('div', 'setting-controls');
+      const range = el('input');
+      range.type = 'range';
+      range.min = '0';
+      range.max = '100';
+      range.step = '1';
+      range.value = String(current[control.key]);
+      const value = el('span', 'range-value', `${current[control.key]}%`);
+      range.addEventListener('input', () => {
+        const styleEffects = {
+          ...this.profile!.settings.styleEffects,
+          [mode]: {
+            ...this.profile!.settings.styleEffects[mode],
+            [control.key]: Number(range.value)
+          }
+        };
+        value.textContent = `${range.value}%`;
+        this.profile!.settings = normalizeSettings({ ...this.profile!.settings, styleEffects });
+        this.applyProfileAppearance();
+        void this.persist();
+      });
+      controlWrap.append(range, value);
+      row.append(controlWrap);
+      body.append(row);
+    }
+    modal.append(body);
+    const buttons = el('div', 'button-row');
+    const reset = button('RESET CURRENT STYLE', 'button secondary');
+    reset.addEventListener('click', () => {
+      this.profile!.settings = normalizeSettings({
+        ...this.profile!.settings,
+        styleEffects: {
+          ...this.profile!.settings.styleEffects,
+          [mode]: { ...DEFAULT_SETTINGS.styleEffects[mode] }
+        }
+      });
+      this.applyProfileAppearance();
+      void this.persist();
+      this.renderWorkstation();
+    });
+    const close = button('CLOSE');
+    close.addEventListener('click', () => {
+      this.styleCustomizationMode = null;
+      this.renderWorkstation();
+    });
+    buttons.append(reset, close);
+    modal.append(buttons);
+    backdrop.append(modal);
+    return backdrop;
   }
 
   private handleNetworkChange(online: boolean): void {
@@ -688,6 +867,7 @@ export class App {
     if (!window.confirm(`DELETE LOCAL PERSONNEL ID ${id}?\n\nThis cannot be undone unless you exported a .scp-id backup.`)) return;
     await this.store.remove(id);
     await this.store.setActiveId(null);
+    this.clearDynamicStyleEffects();
     this.profile = null;
     this.currentDocument = null;
     this.renderGate(await this.store.list(), `LOCAL PERSONNEL RECORD ${id} DELETED`);
@@ -706,8 +886,10 @@ export class App {
   private async logout(): Promise<void> {
     await this.persist();
     await this.store.setActiveId(null);
+    this.clearDynamicStyleEffects();
     this.profile = null;
     this.currentDocument = null;
+    this.styleCustomizationMode = null;
     this.terminalLines = ['FOUNDATION COMMAND INTERFACE READY. TYPE HELP.'];
     this.renderGate(await this.store.list(), 'PERSONNEL CREDENTIAL REMOVED');
   }

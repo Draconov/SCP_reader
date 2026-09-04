@@ -1,4 +1,4 @@
-export type InterfaceMode = 'modern' | 'hybrid' | 'physical-crt' | 'legacy' | 'archive';
+export type InterfaceMode = 'normal' | 'simulated';
 export type ImmersionLevel = 'low' | 'standard' | 'full';
 export type PaletteName = 'green' | 'amber' | 'cold' | 'blue' | 'high-contrast';
 export type ResearcherRank = 'Research Assistant' | 'Junior Researcher' | 'Researcher' | 'Senior Researcher' | 'Lead Researcher' | 'Principal Researcher';
@@ -15,17 +15,29 @@ export interface ResearcherIdentity {
   lastActiveAt: string;
 }
 
+export interface StyleEffectSettings {
+  glow: number;
+  scanlines: number;
+  curvature: number;
+  flicker: number;
+  vignette: number;
+  noise: number;
+  reflection: number;
+  bezel: number;
+  runningScanline: number;
+  runningScanlineSpeed: number;
+  randomEventFrequency: number;
+  density: number;
+}
+
 export interface ResearcherSettings {
   interfaceMode: InterfaceMode;
   immersion: ImmersionLevel;
   palette: PaletteName;
-  scanlines: boolean;
-  glow: boolean;
-  curvature: boolean;
-  flicker: boolean;
   reduceMotion: boolean;
   fontScale: number;
   sound: boolean;
+  styleEffects: Record<InterfaceMode, StyleEffectSettings>;
 }
 
 export interface ResearchNote {
