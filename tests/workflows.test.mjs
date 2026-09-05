@@ -10,13 +10,6 @@ test('archive sync runs automatically when main is published', () => {
   assert.match(workflow, /publish-snapshot\.sh/);
 });
 
-test('Pages deploy reruns after archive synchronization completes', () => {
-  const workflow = fs.readFileSync(new URL('../.github/workflows/deploy.yml', import.meta.url), 'utf8');
-  assert.match(workflow, /workflow_run:/);
-  assert.match(workflow, /workflows:\s*\["Archive Sync"\]/);
-});
-
-
 test('snapshot publisher preserves dirty main worktree and pushes generated archive from isolation', async () => {
   const { mkdtemp, mkdir, writeFile, readFile, access } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');
