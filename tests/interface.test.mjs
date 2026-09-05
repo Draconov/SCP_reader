@@ -107,6 +107,13 @@ test('credential gates use the official Foundation mark on the right and tint it
   assert.match(css, /foundation-logo-mark::before[\s\S]*background:\s*var\(--accent\)/);
   assert.match(css, /scp-foundation-mark-mask\.png/);
   assert.match(css, /\.foundation-mark\s*\{[^}]*justify-self:\s*end/s);
+  assert.match(css, /\.foundation-mark\s*\{[^}]*width:\s*clamp\([^,]+,[^,]+,\s*(?:9\d|100)px\)/s);
+  const logoBlock = css.match(/\.foundation-logo-mark\s*\{([^}]*)\}/s)?.[1] ?? '';
+  assert.doesNotMatch(logoBlock, /border\s*:/);
+  assert.doesNotMatch(logoBlock, /background\s*:/);
+  assert.doesNotMatch(logoBlock, /box-shadow\s*:/);
+  assert.match(css, /foundation-logo-mark::before[\s\S]*filter:\s*drop-shadow/);
+  assert.match(css, /data-interface-mode='simulated'[\s\S]*foundation-logo-mark::before[^}]*var\(--fx-glow\)/);
   assert.ok(fs.existsSync(new URL('../public/scp-foundation-mark-mask.png', import.meta.url)));
 });
 
