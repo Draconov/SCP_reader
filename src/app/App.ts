@@ -15,7 +15,7 @@ import { parseCommand } from '../terminal/parser.js';
 import type { ArchiveDocument, ArchiveIndexEntry, AssignmentState, InterfaceMode, ResearchNote, ResearcherProfile, StyleEffectSettings } from '../shared/types.js';
 import { button, clear, el, formatTime } from './dom.js';
 
-export type ViewName = 'archive' | 'assignments' | 'mail' | 'bookmarks' | 'notes' | 'terminal' | 'profile' | 'settings';
+export type ViewName = 'archive' | 'assignments' | 'mail' | 'bookmarks' | 'notes' | 'terminal' | 'profile' | 'settings' | 'help';
 
 export class App {
   private root: HTMLElement;
@@ -297,8 +297,11 @@ export class App {
     this.applyProfileAppearance();
     const shell = el('div', 'workstation-shell');
     if (this.profile.settings.interfaceMode === 'simulated') {
+      const scanlineUnderlay = el('div', 'crt-scanline-underlay');
+      scanlineUnderlay.append(el('div', 'crt-scanline-sweep'));
+      shell.append(scanlineUnderlay);
       const crtEffects = el('div', 'crt-effects');
-      crtEffects.append(el('div', 'crt-scanlines'), el('div', 'crt-noise'), el('div', 'crt-scanline-sweep'));
+      crtEffects.append(el('div', 'crt-scanlines'), el('div', 'crt-noise'));
       shell.append(crtEffects);
     }
     const top = el('header', 'topbar');
@@ -310,7 +313,7 @@ export class App {
 
     const workspace = el('div', 'workspace');
     const sidebar = el('nav', 'sidebar');
-    const navItems: Array<[ViewName, string]> = [['archive', 'ARCHIVE'], ['assignments', 'ASSIGNMENTS'], ['mail', 'MAIL'], ['bookmarks', 'BOOKMARKS'], ['notes', 'NOTES'], ['terminal', 'TERMINAL'], ['profile', 'PERSONNEL'], ['settings', 'SYSTEM']];
+    const navItems: Array<[ViewName, string]> = [['archive', 'ARCHIVE'], ['assignments', 'ASSIGNMENTS'], ['mail', 'MAIL'], ['bookmarks', 'BOOKMARKS'], ['notes', 'NOTES'], ['terminal', 'TERMINAL'], ['profile', 'PERSONNEL'], ['settings', 'SYSTEM'], ['help', 'HELP']];
     for (const [view, label] of navItems) {
       const nav = button(label, `nav-button ${this.currentView === view ? 'active' : ''}`);
       nav.addEventListener('click', () => this.openView(view));
@@ -329,7 +332,7 @@ export class App {
     const mobileNav = el('nav', 'mobile-nav');
     const mobileNavItems: Array<[ViewName, string]> = [
       ['archive', 'FILES'], ['assignments', 'TASKS'], ['mail', 'MAIL'], ['bookmarks', 'SAVED'],
-      ['notes', 'NOTES'], ['terminal', 'TERM'], ['profile', 'ID'], ['settings', 'SYSTEM']
+      ['notes', 'NOTES'], ['terminal', 'TERM'], ['profile', 'ID'], ['settings', 'SYSTEM'], ['help', 'HELP']
     ];
     for (const [view, label] of mobileNavItems) {
       const nav = button(label, `mobile-nav-button ${this.currentView === view ? 'active' : ''}`);
@@ -363,6 +366,7 @@ export class App {
       case 'terminal': this.renderTerminal(container); break;
       case 'profile': this.renderProfile(container); break;
       case 'settings': this.renderSettings(container); break;
+      case 'help': this.renderHelp(container); break;
       default: this.renderArchive(container);
     }
   }
@@ -719,7 +723,8 @@ export class App {
     const range = el('input');
     range.type = 'range'; range.min = '0.8'; range.max = '1.5'; range.step = '0.05'; range.value = String(this.profile.settings.fontScale);
     const value = el('span', 'range-value', `${Math.round(this.profile.settings.fontScale * 100)}%`);
-    range.addEventListener('input', () => { const fontScale = Number(range.value); value.textContent = `${Math.round(fontScale * 100)}%`; this.profile!.settings = normalizeSettings({ ...this.profile!.settings, fontScale }); this.applyProfileAppearance(); void this.persist(); });
+    this.syncRangeVisual(range);
+    range.addEventListener('input', () => { const fontScale = Number(range.value); value.textContent = `${Math.round(fontScale * 100)}%`; this.syncRangeVisual(range); this.profile!.settings = normalizeSettings({ ...this.profile!.settings, fontScale }); this.applyProfileAppearance(); void this.persist(); });
     font.append(range, value); form.append(font);
     container.append(form);
     container.append(el('p', 'muted', 'Palettes apply to every interface style. Each style keeps its own effect preset, and CUSTOMIZE STYLE opens a dedicated popup for the currently selected style.'));
@@ -739,7 +744,36 @@ export class App {
     maintenanceButtons.append(clearCache, deleteProfile);
     maintenance.append(maintenanceButtons, el('p', 'muted', 'Clearing the document cache does not delete your researcher profile. Deleting the local ID is permanent unless you exported a .scp-id backup.'));
     container.append(maintenance);
-    container.append(el('p', 'muted settings-note', 'Keyboard: Ctrl+K search · Ctrl+A assignments · Ctrl+M mail · Ctrl+N notes · Ctrl+Shift+P terminal · Ctrl+, settings · Alt+Left back. Accessibility settings override conflicting immersion effects.'));
+  }
+
+  private renderHelp(container: HTMLElement): void {
+    container.append(this.windowHeader('HELP / OPERATOR REFERENCE', 'LOCAL TERMINAL GUIDE'));
+    const shortcuts = el('section', 'panel inset help-panel');
+    shortcuts.append(el('h3', '', 'KEYBOARD SHORTCUTS'));
+    const entries = [
+      ['Ctrl+K', 'Archive search'],
+      ['Ctrl+A', 'Assignments'],
+      ['Ctrl+M', 'Mail'],
+      ['Ctrl+N', 'Notes'],
+      ['Ctrl+Shift+P', 'Command terminal'],
+      ['Ctrl+,', 'System settings'],
+      ['Alt+Left', 'Back to archive / previous record']
+    ];
+    for (const [shortcut, action] of entries) {
+      const row = el('div', 'help-row');
+      row.append(el('kbd', 'help-key', shortcut), el('span', '', action));
+      shortcuts.append(row);
+    }
+    container.append(shortcuts);
+
+    const accessibility = el('section', 'panel inset help-panel');
+    accessibility.append(
+      el('h3', '', 'ACCESSIBILITY / DISPLAY'),
+      el('p', 'muted', 'Accessibility settings override conflicting immersion effects.'),
+      el('p', 'muted', 'Reduce Motion disables random CRT flicker and moving scanline events while preserving the selected interface style and palette.'),
+      el('p', 'muted', 'Scrollable terminal views remain keyboard, mouse-wheel, and touch accessible even though visual scrollbars are intentionally hidden for immersion.')
+    );
+    container.append(accessibility);
   }
 
   private renderStyleCustomizationModal(mode: InterfaceMode): HTMLElement {
@@ -791,6 +825,7 @@ export class App {
       range.step = '1';
       range.value = String(current[control.key]);
       const value = el('span', 'range-value', `${current[control.key]}%`);
+      this.syncRangeVisual(range);
       range.addEventListener('input', () => {
         const styleEffects = {
           ...this.profile!.settings.styleEffects,
@@ -800,6 +835,7 @@ export class App {
           }
         };
         value.textContent = `${range.value}%`;
+        this.syncRangeVisual(range);
         this.profile!.settings = normalizeSettings({ ...this.profile!.settings, styleEffects });
         this.applyProfileAppearance();
         void this.persist();
@@ -832,6 +868,14 @@ export class App {
     modal.append(buttons);
     backdrop.append(modal);
     return backdrop;
+  }
+
+  private syncRangeVisual(range: HTMLInputElement): void {
+    const min = Number(range.min || 0);
+    const max = Number(range.max || 100);
+    const value = Number(range.value);
+    const progress = max > min ? ((value - min) / (max - min)) * 100 : 0;
+    range.style.setProperty('--range-progress', `${Math.max(0, Math.min(100, progress))}%`);
   }
 
   private handleNetworkChange(online: boolean): void {

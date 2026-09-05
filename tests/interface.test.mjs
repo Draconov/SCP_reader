@@ -93,5 +93,37 @@ test('Simulated content surfaces derive from the active palette instead of fixed
 
 test('service-worker cache revision advances with visual assets', () => {
   const sw = fs.readFileSync(new URL('../public/service-worker.js', import.meta.url), 'utf8');
-  assert.match(sw, /CACHE_VERSION = 'scp-reader-v5'/);
+  assert.match(sw, /CACHE_VERSION = 'scp-reader-v6'/);
+});
+
+test('workstation is viewport-bound and scrollable views never expose browser scrollbars', () => {
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  assert.match(css, /html, body, #root\s*\{[^}]*height:\s*100%[^}]*overflow:\s*hidden/s);
+  assert.match(css, /\.workstation-shell\s*\{[^}]*height:\s*100dvh[^}]*min-height:\s*0/s);
+  assert.match(css, /\.workspace\s*\{[^}]*min-height:\s*0[^}]*overflow:\s*hidden/s);
+  assert.match(css, /\.main-window\s*\{[^}]*min-height:\s*0[^}]*overflow:\s*auto/s);
+  assert.match(css, /scrollbar-width:\s*none/);
+  assert.match(css, /::-webkit-scrollbar\s*\{[^}]*display:\s*none/s);
+  assert.match(css, /data-interface-mode='simulated'[^}]*\.workstation-shell[\s\S]*height:\s*calc\(100dvh - 52px\)/);
+});
+
+test('all range controls use the Foundation terminal slider skin instead of native browser chrome', () => {
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  const app = fs.readFileSync(new URL('../src/app/App.ts', import.meta.url), 'utf8');
+  assert.match(css, /input\[type=['"]range['"]\]\s*\{[^}]*appearance:\s*none/s);
+  assert.match(css, /input\[type=['"]range['"]\]::-webkit-slider-thumb[\s\S]*background:\s*var\(--accent\)/);
+  assert.match(css, /input\[type=['"]range['"]\]::-moz-range-thumb[\s\S]*background:\s*var\(--accent\)/);
+  assert.match(css, /--range-progress/);
+  assert.match(app, /syncRangeVisual/);
+});
+
+test('running scanline has its own underlay below workstation UI while fine CRT overlays remain above it', () => {
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  const app = fs.readFileSync(new URL('../src/app/App.ts', import.meta.url), 'utf8');
+  assert.match(app, /crt-scanline-underlay/);
+  assert.match(app, /crt-scanline-underlay[\s\S]*crt-scanline-sweep/);
+  assert.doesNotMatch(app, /crtEffects\.append\([^;]*crt-scanline-sweep/);
+  assert.match(css, /\.crt-scanline-underlay\s*\{[^}]*z-index:\s*0/s);
+  assert.match(css, /\.topbar,[\s\S]*\.workspace,[\s\S]*\.statusbar\s*\{[^}]*z-index:\s*1/s);
+  assert.match(css, /\.crt-effects\s*\{[^}]*z-index:\s*[2-9]\d*/s);
 });

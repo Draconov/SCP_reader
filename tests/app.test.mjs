@@ -45,3 +45,19 @@ test('access denied panel stays fully in-universe', () => {
   assert.match(source, /CURRENT CREDENTIAL: LEVEL/);
   assert.doesNotMatch(source, /This simulated clearance requirement is generated|not canonical SCP Wiki metadata/i);
 });
+
+test('Help is a dedicated workstation view and System no longer owns the shortcut guide', () => {
+  const source = fs.readFileSync(new URL('../src/app/App.ts', import.meta.url), 'utf8');
+  assert.match(source, /ViewName = [^;]*'help'/);
+  assert.match(source, /\['help', 'HELP'\]/);
+  assert.match(source, /case 'help':\s*this\.renderHelp\(container\)/);
+  assert.match(source, /private renderHelp\(container: HTMLElement\)/);
+  const settingsStart = source.indexOf('private renderSettings');
+  const helpStart = source.indexOf('private renderHelp');
+  assert.ok(settingsStart >= 0 && helpStart > settingsStart);
+  const settingsSource = source.slice(settingsStart, helpStart);
+  assert.doesNotMatch(settingsSource, /Keyboard:\s*Ctrl\+K|Accessibility settings override conflicting immersion effects/);
+  const helpSource = source.slice(helpStart);
+  assert.match(helpSource, /Ctrl\+K/);
+  assert.match(helpSource, /Accessibility settings override conflicting immersion effects/);
+});
