@@ -39,7 +39,7 @@ a { color:var(--accent); }
 .eyebrow, .simulation-label { color:var(--muted); font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; }
 .id-gate { width:100%; height:100dvh; min-height:0; display:grid; place-items:center; overflow:auto; overscroll-behavior:contain; padding:24px; }
 .credential-terminal { width:min(720px, 100%); padding:32px; position:relative; }
-.credential-header { display:grid; grid-template-columns:minmax(0, 1fr) auto; align-items:start; gap:24px; }
+.credential-header { display:grid; grid-template-columns:minmax(0, 1fr) auto; align-items:center; gap:24px; }
 .credential-title-group { min-width:0; }
 .foundation-mark { width:clamp(72px, 9vw, 92px); height:clamp(72px, 9vw, 92px); position:relative; justify-self:end; flex:none; }
 .foundation-logo-mark::before {
@@ -51,7 +51,8 @@ a { color:var(--accent); }
   mask:url('./scp-foundation-mark-mask.png') center / contain no-repeat;
   filter:drop-shadow(0 0 5px var(--shadow)) drop-shadow(0 0 10px var(--shadow));
 }
-.credential-terminal h1 { margin:.2rem 0; font-size:2rem; letter-spacing:.08em; }
+.credential-terminal h1 { margin:.2rem 0; font-size:clamp(2.6rem, 5vw, 4rem); line-height:.95; letter-spacing:.08em; }
+.credential-title-group .eyebrow { margin:.72rem 0 0; font-size:clamp(.76rem, 1.15vw, .92rem); letter-spacing:.16em; }
 .credential-terminal h2 { margin-top:28px; }
 .terminal-rule { height:1px; background:var(--border); margin:24px 0; }
 .known-profiles { display:grid; gap:8px; margin:22px 0; }
@@ -215,11 +216,11 @@ input[type='range']:focus-visible::-moz-range-thumb { background:var(--text); }
   gap:7px;
   overflow:hidden;
   border:calc(var(--fx-bezel) * 22px) solid color-mix(in srgb, var(--panel) 78%, #2a2a2a 22%);
-  border-radius:calc(var(--fx-curvature) * 92px) / calc(var(--fx-curvature) * 68px);
+  border-radius:calc(var(--fx-curvature) * 128px) / calc(var(--fx-curvature) * 96px);
   background:
     radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--accent) 6%, transparent) 0%, transparent 58%),
     linear-gradient(180deg, color-mix(in srgb, var(--panel) 90%, #070707 10%) 0%, color-mix(in srgb, var(--bg) 94%, #000 6%) 100%);
-  transform:perspective(950px) rotateX(calc(var(--fx-curvature) * 3.2deg)) scale(calc(1 - var(--fx-curvature) * .06));
+  transform:scale(calc(1 - var(--fx-curvature) * .035));
   box-shadow:
     0 0 0 calc(var(--fx-bezel) * 8px) color-mix(in srgb, var(--panel-2) 72%, #3b3b3b 28%),
     0 0 0 calc(var(--fx-bezel) * 14px) color-mix(in srgb, var(--panel) 72%, #181818 28%),
@@ -234,12 +235,15 @@ input[type='range']:focus-visible::-moz-range-thumb { background:var(--text); }
   inset:10px;
   z-index:80;
   pointer-events:none;
-  border-radius:calc(var(--fx-curvature) * 72px) / calc(var(--fx-curvature) * 52px);
+  border-radius:calc(var(--fx-curvature) * 108px) / calc(var(--fx-curvature) * 80px);
   opacity:calc(var(--fx-reflection) * 1);
   background:
+    radial-gradient(ellipse at 50% 38%, color-mix(in srgb, white 10%, transparent) 0%, transparent 46%),
     linear-gradient(112deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.035) 22%, transparent 43%),
     radial-gradient(ellipse at 49% 43%, transparent 50%, rgba(0,0,0,.12) 71%, rgba(0,0,0,.56) 100%);
-  box-shadow:inset 0 0 calc(var(--fx-glow) * 72px) color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow:
+    inset 0 0 calc(var(--fx-curvature) * 110px) rgba(0,0,0,.46),
+    inset 0 0 calc(var(--fx-glow) * 72px) color-mix(in srgb, var(--accent) 12%, transparent);
 }
 :root[data-interface-mode='simulated'] .workstation-shell::after {
   content:'';
@@ -247,10 +251,10 @@ input[type='range']:focus-visible::-moz-range-thumb { background:var(--text); }
   inset:10px;
   z-index:81;
   pointer-events:none;
-  border-radius:calc(var(--fx-curvature) * 72px) / calc(var(--fx-curvature) * 52px);
+  border-radius:calc(var(--fx-curvature) * 108px) / calc(var(--fx-curvature) * 80px);
   opacity:calc(var(--fx-vignette) * .95);
   background:
-    radial-gradient(ellipse at 50% 46%, transparent 58%, rgba(0,0,0,.34) 100%),
+    radial-gradient(ellipse at 50% 50%, transparent 46%, rgba(0,0,0,.18) 68%, rgba(0,0,0,.72) 100%),
     linear-gradient(90deg, rgba(255,255,255,.01), transparent 20%, rgba(0,0,0,.03) 72%, rgba(255,255,255,.01));
   box-shadow:inset 0 0 calc(var(--fx-vignette) * 180px) rgba(0,0,0,.72);
 }
@@ -266,7 +270,7 @@ input[type='range']:focus-visible::-moz-range-thumb { background:var(--text); }
   inset:10px;
   z-index:0;
   overflow:hidden;
-  border-radius:calc(var(--fx-curvature) * 72px) / calc(var(--fx-curvature) * 52px);
+  border-radius:calc(var(--fx-curvature) * 108px) / calc(var(--fx-curvature) * 80px);
   pointer-events:none;
 }
 :root[data-interface-mode='simulated'] .crt-effects {
@@ -275,7 +279,7 @@ input[type='range']:focus-visible::-moz-range-thumb { background:var(--text); }
   inset:10px;
   z-index:82;
   overflow:hidden;
-  border-radius:calc(var(--fx-curvature) * 72px) / calc(var(--fx-curvature) * 52px);
+  border-radius:calc(var(--fx-curvature) * 108px) / calc(var(--fx-curvature) * 80px);
   pointer-events:none;
 }
 :root[data-interface-mode='simulated'] .crt-scanlines,
