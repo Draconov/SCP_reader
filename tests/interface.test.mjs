@@ -148,3 +148,20 @@ test('running scanline has its own underlay below workstation UI while fine CRT 
   assert.match(css, /\.topbar,[\s\S]*\.workspace,[\s\S]*\.statusbar\s*\{[^}]*z-index:\s*1/s);
   assert.match(css, /\.crt-effects\s*\{[^}]*z-index:\s*[2-9]\d*/s);
 });
+test('visual effect sliders reserve an unmistakably strong 100% ceiling without changing timing controls', () => {
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  assert.match(css, /data-has-curvature='true'[^}]*rotateX\(calc\(var\(--fx-curvature\) \* 2\.4deg\)\)[^}]*scale\(calc\(1 - var\(--fx-curvature\) \* \.05\)\)/s);
+  assert.match(css, /data-random-flicker-active='true'[^}]*var\(--fx-flicker\) \* \.20[^}]*var\(--fx-flicker\) \* \.16/s);
+  assert.match(css, /data-interface-mode='normal'[\s\S]*box-shadow:0 0 calc\(16px \+ var\(--fx-glow\) \* 34px\)/);
+  assert.match(css, /data-interface-mode='normal'[\s\S]*var\(--fx-vignette\) \* 44px/);
+  assert.match(css, /data-interface-mode='simulated'[\s\S]*border:calc\(var\(--fx-bezel\) \* 22px\)/);
+  assert.match(css, /data-interface-mode='simulated'[\s\S]*border-radius:calc\(var\(--fx-curvature\) \* 92px\) \/ calc\(var\(--fx-curvature\) \* 68px\)/);
+  assert.match(css, /data-interface-mode='simulated'[\s\S]*rotateX\(calc\(var\(--fx-curvature\) \* 3\.2deg\)\)[^}]*scale\(calc\(1 - var\(--fx-curvature\) \* \.06\)\)/s);
+  assert.match(css, /var\(--fx-vignette\) \* 160px/);
+  assert.match(css, /var\(--fx-glow\) \* 120px/);
+  assert.match(css, /opacity:calc\(var\(--fx-reflection\) \* 1\)/);
+  assert.match(css, /crt-scanlines[\s\S]*opacity:calc\(var\(--fx-scanlines\) \* \.96\)/);
+  assert.match(css, /crt-noise[\s\S]*opacity:calc\(var\(--fx-noise\) \* \.68\)/);
+  assert.match(css, /scanline-sweep-active[\s\S]*opacity:calc\(var\(--fx-running-scanline\) \* \.96\)/);
+  assert.match(css, /data-interface-mode='simulated'[\s\S]*line-height:calc\(1\.62 - var\(--fx-density\) \* \.30\)/);
+});
