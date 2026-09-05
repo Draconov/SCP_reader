@@ -93,7 +93,7 @@ test('Simulated content surfaces derive from the active palette instead of fixed
 
 test('service-worker cache revision advances with visual assets', () => {
   const sw = fs.readFileSync(new URL('../public/service-worker.js', import.meta.url), 'utf8');
-  assert.match(sw, /CACHE_VERSION = 'scp-reader-v6'/);
+  assert.match(sw, /CACHE_VERSION = 'scp-reader-v7'/);
 });
 
 test('workstation is viewport-bound and scrollable views never expose browser scrollbars', () => {
@@ -126,4 +126,24 @@ test('running scanline has its own underlay below workstation UI while fine CRT 
   assert.match(css, /\.crt-scanline-underlay\s*\{[^}]*z-index:\s*0/s);
   assert.match(css, /\.topbar,[\s\S]*\.workspace,[\s\S]*\.statusbar\s*\{[^}]*z-index:\s*1/s);
   assert.match(css, /\.crt-effects\s*\{[^}]*z-index:\s*[2-9]\d*/s);
+});
+test('branding assets wire the supplied logo into favicon, PWA manifest, service worker, and README', () => {
+  const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const manifest = JSON.parse(fs.readFileSync(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8'));
+  const sw = fs.readFileSync(new URL('../public/service-worker.js', import.meta.url), 'utf8');
+  const readme = fs.readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+  const source = fs.readFileSync(new URL('../public/logo-source.png', import.meta.url));
+  const width = source.readUInt32BE(16);
+  const height = source.readUInt32BE(20);
+
+  assert.equal(width, 3000);
+  assert.equal(height, 3000);
+  assert.match(index, /rel="icon"[^>]+favicon-32\.png/);
+  assert.deepEqual(manifest.icons.map((icon) => icon.sizes), ['192x192', '512x512']);
+  assert.deepEqual(manifest.icons.map((icon) => icon.src), ['./icon-192.png', './icon-512.png']);
+  assert.match(sw, /CACHE_VERSION = 'scp-reader-v7'/);
+  for (const asset of ['./favicon-32.png', './icon-192.png', './icon-512.png', './logo.png']) assert.match(sw, new RegExp(asset.replace(/[.]/g, '\\$&')));
+  assert.match(readme, /public\/logo\.png/);
+  assert.match(readme, /https:\/\/draconov\.github\.io\/SCP_reader\//);
+  assert.match(readme, /https:\/\/github\.com\/Draconov\/SCP_reader/);
 });

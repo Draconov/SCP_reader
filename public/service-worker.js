@@ -1,5 +1,5 @@
-const CACHE_VERSION = 'scp-reader-v6';
-const CORE = ['./', './index.html', './style.css', './manifest.webmanifest', './icon.svg', './archive/index.json'];
+const CACHE_VERSION = 'scp-reader-v7';
+const CORE = ['./', './index.html', './style.css', './manifest.webmanifest', './favicon-32.png', './icon-192.png', './icon-512.png', './logo.png', './archive/index.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(CORE.map((path) => new URL(path, self.registration.scope).toString()))).catch(() => undefined));

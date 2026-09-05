@@ -1,52 +1,68 @@
-# SCP_reader — SCP Foundation Research Terminal
+<div align="center">
+  <img src="public/logo.png" width="220" alt="SCP_reader terminal logo" />
 
-An immersive, local-first SCP Foundation archive reader that makes the site feel like a classified Foundation research workstation instead of a normal wiki browser.
+# SCP_reader
 
-This repository is intended to be published as **`SCP_reader`** on GitHub and deployed with **GitHub Pages**. It has no user-account backend: researcher careers live in the browser and can be exported as human-readable `.scp-id` files.
+### SCP Foundation Research Terminal
 
-## Current release: 0.1.3 — Archive Snapshot Workflow Fix
+An immersive SCP archive reader built to feel like using real Foundation workstation.
 
-Phase 1 is now complete. The included implementation provides:
+[**Open SCP_reader**](https://draconov.github.io/SCP_reader/) · [**GitHub Repository**](https://github.com/Draconov/SCP_reader)
 
-- secure-looking **INSERT FOUNDATION ID** startup flow
-- multiple local researcher profiles using IndexedDB, with localStorage fallback
-- `.scp-id` JSON import/export
-- desktop Foundation workstation and dedicated responsive Field Terminal layout
-- Archive Browser with text/tag/type/clearance search syntax
-- real SCP Wiki archive synchronization tooling
-- sanitized document viewer with canonical content separated from simulation metadata
-- attribution/source panel for every synchronized record
-- automatic media omission unless redistribution has been explicitly handled
-- bookmarks with a dedicated saved-record browser, private research notes, and access history
-- Orientation R-0001 assignment
-- Foundation Mail starter simulation
-- immersion-aware credential authentication with instant / standard / full sequences and a skip control
-- command terminal (`HELP`, `OPEN`, `FIND`, `SOURCE`, `RELATED`, `LIST`, `PROFILE`, `CLEARANCE`, `HISTORY`, `NOTES`, `BOOKMARKS`, `LOGOUT`)
-- Modern / Foundation Hybrid / Physical CRT / Legacy Terminal / Archive Terminal interface modes
-- green / amber / cold-white / blue / high-contrast palettes
-- configurable scanlines, glow, curvature, flicker, reduce-motion, font scale, and sound preference
-- opt-in **Physical CRT** mode with a dark hardware bezel, curved glass treatment, vignette, denser terminal layout, and localized phosphor scanlines
-- service-worker cache so previously opened files remain available offline, with live online/local-archive status and cache clearing
-- GitHub Actions for CI, periodic archive synchronization, and Pages deployment
-- keyboard-first workstation navigation and complete scrollable Field Terminal navigation on mobile
-- dependency-free runtime/build pipeline: TypeScript + browser APIs + Node 22 tooling
+</div>
 
-The full approved long-term design and 12-phase roadmap are in [`docs/superpowers/specs/2026-09-04-scp-research-terminal-design.md`](docs/superpowers/specs/2026-09-04-scp-research-terminal-design.md).
+---
 
-## Phase 1 completion status
+## What is SCP_reader?
 
-Phase 1 remains complete and is patched at **0.1.3**, ready for Phase 2 development. Its acceptance path is:
+SCP_reader wraps real SCP Wiki records in a Foundation-style research terminal. It combines canonical archive content with a clearly separated local researcher simulation: personnel IDs, clearance presentation, assignments, notes, bookmarks, mail, terminal commands, offline access, and configurable interface effects.
 
-```text
-OPEN WEBSITE → INSERT / ISSUE ID → AUTHENTICATE → SEARCH ARCHIVE → OPEN RECORD
-→ BOOKMARK / NOTE → LOG OUT → RETURN WITH SAME ID → USE CACHED RECORDS OFFLINE
-```
+The project is static and privacy-friendly. There is no user-account backend: researcher state stays in the browser and can be exported as a human-readable `.scp-id` file.
 
-Phase 2 starts with full-Wiki discovery, incremental revision synchronization, richer page classification, relationship indexing, and the Specialized Archive Module pipeline.
+## Current experience
+
+### Foundation workstation
+
+- **INSERT ID** startup and local personnel profiles
+- desktop Research Network interface and responsive mobile Field Terminal
+- Archive Browser with number, text, tag, type, and clearance search
+- synchronized SCP Wiki records with source/attribution metadata
+- bookmarks, research notes, access history, assignments, mail, and personnel dossier
+- keyboard-first navigation plus a dedicated **Help** view
+- command terminal with `HELP`, `OPEN`, `FIND`, `SOURCE`, `RELATED`, `LIST`, `PROFILE`, `CLEARANCE`, `HISTORY`, `NOTES`, `BOOKMARKS`, and `LOGOUT`
+
+### Two interface styles
+
+**Normal** is the clean Foundation terminal interface.
+
+**Simulated** turns the workstation into a configurable physical CRT presentation with:
+
+- phosphor glow
+- fine scanlines
+- CRT curvature
+- edge vignette
+- glass reflection
+- physical bezel
+- static/noise
+- subtle random flicker
+- an occasional running scanline that travels behind the UI
+- adjustable effect intensity, speed, event frequency, and terminal density
+
+Each style keeps its own effect preset. The palette system is independent from interface style, so the same palette can be used by Normal, Simulated, and future styles.
+
+Available palettes:
+
+- Green
+- Amber
+- Cold
+- Blue
+- High Contrast
+
+Accessibility options such as **Reduce Motion** override conflicting visual effects.
 
 ## Quick start
 
-Requirements: **Node.js 22+** and **TypeScript (`tsc`) available on PATH**.
+Requirements: **Node.js 22+**.
 
 ```bash
 npm ci
@@ -56,19 +72,15 @@ npm run build
 npm run dev
 ```
 
-The local server opens at `http://127.0.0.1:5173` by default.
+The development server uses `http://127.0.0.1:5173` by default.
 
-There are intentionally no third-party runtime dependencies in Phase 1. GitHub's Node runner already provides npm, while CI installs TypeScript globally before typechecking/building if your runner does not have it available. If your local machine does not have TypeScript:
+The runtime intentionally avoids third-party browser dependencies. TypeScript is the main build-time dependency.
 
-```bash
-npm install --global typescript
-```
+## Archive synchronization
 
-## Synchronize real SCP Wiki records
+The repository includes a small fallback index so the terminal remains usable before synchronization. Canonical article text is synchronized from the English SCP Wiki rather than being manually copied into the application source.
 
-The repository ships with a small **index-only fallback** so the interface works before the first network sync. Canonical SCP article text is not hand-copied into source files.
-
-Synchronize the seed manifest:
+Synchronize the Phase-1 seed records:
 
 ```bash
 npm run archive:sync:seed
@@ -80,7 +92,7 @@ Synchronize one record:
 node tools/archive-sync/cli.mjs --slug scp-049
 ```
 
-Generated files are written to:
+Generated archive data is written to:
 
 ```text
 public/archive/index.json
@@ -89,117 +101,110 @@ public/archive/revisions.json
 public/archive/sync-report.json
 ```
 
-The normalizer:
+The normalizer removes active/unsafe markup, omits remote media unless redistribution has been handled safely, preserves source links and licensing metadata, and marks presentation-heavy pages for future Specialized Archive Modules.
 
-- extracts the rendered `#page-content`
-- removes scripts, forms, embedded objects, inline event handlers, and unsafe URLs
-- omits images/media by default instead of assuming redistribution rights
-- converts internal links to safe original-source URLs
-- extracts page tags where available
-- records revision and licensing/citation metadata when present
-- detects presentation-heavy pages and marks them for the future Specialized Archive Module layer
+## Offline behavior
 
-`content/archive-seeds.json` contains the 10-record representative Phase-1 starter set, and every seed is visible in the fallback archive before the first sync. The full-Wiki discovery/incremental mirror is a Phase-2 feature; the current CLI already supports arbitrary individual page slugs and is the base for that expansion.
+SCP_reader is installable as a PWA and maintains a local cache for the application shell and viewed archive material. Previously accessed records remain available when the network is unavailable.
 
-## GitHub Pages publishing
-
-1. Create a GitHub repository named **`SCP_reader`**.
-2. Push this repository to `main`.
-3. In **Settings → Pages**, set **Source** to **GitHub Actions**.
-4. The first push to `main` automatically runs **Archive Sync** for the Phase-1 seed manifest.
-5. **Deploy GitHub Pages** first publishes the app shell, then refreshes again when the generated archive snapshot is ready.
-
-You can still run **Archive Sync** manually for a single slug or the seed manifest. The scheduled archive job also runs twice weekly and force-refreshes a generated `archive-snapshot` branch from an isolated temporary Git worktree, so generated SCP JSON never requires switching branches in the dirty main checkout and normal source history does not fill with generated archive churn.
+The System view can clear the local document cache without deleting the current researcher profile.
 
 ## Researcher profiles
 
-Researcher state is never sent to a project server. A profile includes:
+A local researcher profile contains:
 
 - personnel identity
 - rank and clearance
-- hidden progression fields
+- progression data
 - assignments
-- notes and bookmarks
+- bookmarks and notes
 - access history
 - mail state
-- discoveries/collections placeholders
-- interface/immersion settings
+- discoveries and collections state
+- interface, palette, immersion, and accessibility settings
 
-Exporting a profile creates a plain JSON `.scp-id` file. There is intentionally **no anti-cheat**: this is a single-player reader/simulation.
+Profiles can be exported and imported as `.scp-id` JSON files.
 
-## Canon vs simulation
+## Canonical content vs simulation
 
-The project maintains a hard boundary:
+SCP_reader keeps these layers separate:
 
-- **Canonical content**: synchronized from the SCP Wiki.
-- **Presentation metadata**: how this reader renders a record.
-- **Simulation metadata**: local clearance, assignments, mail, events, and progression.
-- **Researcher state**: local browser / `.scp-id` data.
+| Layer | Purpose |
+| --- | --- |
+| **Canonical archive content** | Text synchronized from the SCP Wiki |
+| **Presentation metadata** | How a record is displayed inside the terminal |
+| **Simulation metadata** | Local clearance behavior, assignments, mail, progression, events |
+| **Researcher state** | Local browser / `.scp-id` information |
 
-Clearance labels and assignments generated by SCP_reader are **not claims about canonical SCP Wiki security metadata**. The document viewer labels simulation-only content accordingly.
+Simulation-generated clearance requirements, assignments, and interface messages are not presented as canonical SCP Wiki metadata.
+
+## GitHub Pages deployment
+
+The repository uses GitHub Actions for archive synchronization, verification, and Pages deployment.
+
+Normal publishing flow:
+
+```text
+push to main
+    ↓
+Archive Sync
+    ↓
+archive-snapshot
+    ↓
+one Pages build
+    ↓
+one deployment
+```
+
+If a main-branch archive refresh temporarily fails, deployment can use the last successful archive snapshot rather than blocking an otherwise valid application update.
+
+## Project layout
+
+```text
+.github/workflows/        CI, archive sync, Pages deployment
+content/                  Simulation content and archive seed manifest
+docs/superpowers/         Design and implementation documents
+public/                   Static/PWA assets, logo files, archive data
+src/app/                  Application shell and workstation views
+src/archive/              Archive loading, search, fallback data
+src/assignments/          Assignment runtime
+src/researcher/           Profile model, storage, import/export
+src/settings/             Interface and effect settings
+src/shared/               Shared types and constants
+src/terminal/             Command parser and execution
+tests/                    Consolidated domain test suite
+tools/archive-sync/       SCP Wiki synchronization tooling
+tools/                    Build and local development scripts
+```
+
+## Branding assets
+
+The repository includes the supplied SCP_reader logo in several sizes:
+
+```text
+public/logo-source.png
+public/logo.png            1024×1024 README/web image
+public/icon-512.png        PWA icon
+public/icon-192.png        PWA icon
+public/favicon-32.png      Browser tab icon
+```
 
 ## Licensing and attribution
 
-SCP Wiki text is generally licensed under **Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0)**. Every synchronized archive document carries its source URL, source site, extracted citation/authorship when available, license, revision metadata, and synchronization timestamp. The reader exposes this information through **SOURCE / ATTRIBUTION**.
+SCP Wiki text is generally distributed under **Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0)**. Synchronized records retain source and licensing metadata, exposed through **SOURCE / ATTRIBUTION** in the reader.
 
-See the official SCP Wiki licensing guide before redistribution:
+Official references:
 
 - https://scp-wiki.wikidot.com/licensing-guide
 - https://creativecommons.org/licenses/by-sa/3.0/
 
-**Media needs separate care.** Images/audio/files can have their own attribution or licensing requirements. Phase 1 therefore omits remote media from mirrored articles by default and directs the user to the original source record. Do not blindly mirror `wdfiles` assets.
+Media requires separate care because individual images, audio, and files may have their own licensing requirements. SCP_reader therefore does not blindly mirror remote media assets.
 
-This project is an unofficial fan project and is not affiliated with the SCP Wiki staff, Wikidot, or an actual organization called the SCP Foundation.
+This is an unofficial fan project and is not affiliated with SCP Wiki staff, Wikidot, or any real organization called the SCP Foundation.
 
-## Repository layout
+---
 
-```text
-.github/workflows/       CI, archive sync, Pages deployment
-content/                 Simulation content + archive seed manifest
-docs/superpowers/        Approved design + implementation plan
-public/                   PWA files and generated/fallback archive
-src/app/                  Application controller + DOM helpers
-src/archive/              Archive loading/search/fallback
-src/assignments/          Data-driven assignment runtime
-src/researcher/           Profile model, persistence, import/export
-src/settings/             Interface/immersion settings
-src/terminal/             Parser + command execution
-src/shared/               Cross-domain contracts/constants
-src/styles/               Compile-time source marker (CSS is public/style.css)
-tests/                    Dependency-free Node tests
-tools/archive-sync/       SCP Wiki fetch/normalize/generate tooling
-tools/build.mjs           Static TypeScript build
-tools/dev-server.mjs      Local static server
-```
-
-## Search examples
-
-```text
-049
-biological
-tag:euclid
-type:scp clearance:<=1
-```
-
-Terminal examples:
-
-```text
-OPEN scp-049
-FIND biological euclid
-LIST ASSIGNMENTS
-PROFILE
-CLEARANCE
-```
-
-## Development principles
-
-- canonical SCP text is never silently rewritten by gameplay code
-- no runtime backend for researcher data
-- no fake waiting is required for progress
-- accessibility settings override immersion effects
-- no daily rewards, streaks, leaderboards, or FOMO systems
-- maintain small modules with explicit data boundaries
-
-## Roadmap
-
-The approved roadmap proceeds from the reader/archive foundation into clearance, investigations, promotions, intranet simulation, advanced research tools, rare events/ARG content, Specialized Archive Modules, and eventually international branches. See the design spec for the full breakdown.
+<div align="center">
+  <strong>SECURE TERMINAL READY.</strong><br />
+  <sub>Insert Foundation credentials to begin archive access.</sub>
+</div>
