@@ -150,7 +150,6 @@ test('running scanline has its own underlay below workstation UI while fine CRT 
 });
 test('visual effect sliders reserve an unmistakably strong 100% ceiling without changing timing controls', () => {
   const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
-  assert.match(css, /data-has-curvature='true'[^}]*rotateX\(calc\(var\(--fx-curvature\) \* 2\.4deg\)\)[^}]*scale\(calc\(1 - var\(--fx-curvature\) \* \.05\)\)/s);
   assert.match(css, /data-random-flicker-active='true'[^}]*var\(--fx-flicker\) \* \.20[^}]*var\(--fx-flicker\) \* \.16/s);
   assert.match(css, /data-interface-mode='normal'[\s\S]*box-shadow:0 0 calc\(16px \+ var\(--fx-glow\) \* 34px\)/);
   assert.match(css, /data-interface-mode='normal'[\s\S]*var\(--fx-vignette\) \* 44px/);
@@ -164,14 +163,21 @@ test('visual effect sliders reserve an unmistakably strong 100% ceiling without 
   assert.match(css, /data-interface-mode='simulated'[\s\S]*line-height:calc\(1\.62 - var\(--fx-density\) \* \.30\)/);
 });
 
-test('credential title visually balances the Foundation logo and Simulated curvature reads as convex CRT glass', () => {
+test('credential title visually balances the Foundation logo', () => {
   const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
   assert.match(css, /\.credential-terminal h1\s*\{[^}]*font-size:\s*clamp\(2\.6rem,[^,]+,\s*4rem\)[^}]*line-height:\s*\.95/s);
   assert.match(css, /\.credential-title-group \.eyebrow\s*\{[^}]*font-size:\s*clamp\(\.76rem,[^,]+,\s*\.92rem\)/s);
+});
 
-  const simulated = css.slice(css.indexOf(":root[data-interface-mode='simulated'] body"), css.indexOf('@media (max-width: 760px)'));
-  assert.match(simulated, /\.workstation-shell\s*\{[^}]*border-radius:calc\(var\(--fx-curvature\) \* 128px\) \/ calc\(var\(--fx-curvature\) \* 96px\)/s);
-  assert.doesNotMatch(simulated.match(/\.workstation-shell\s*\{[^}]*\}/s)?.[0] ?? '', /rotateX/);
-  assert.match(simulated, /\.workstation-shell::before\s*\{[\s\S]*radial-gradient\(ellipse at 50% 38%,\s*color-mix\(in srgb, white 10%, transparent\)[\s\S]*inset 0 0 calc\(var\(--fx-curvature\) \* 110px\)/s);
-  assert.match(simulated, /\.workstation-shell::after\s*\{[\s\S]*radial-gradient\(ellipse at 50% 50%, transparent 46%, rgba\(0,0,0,\.18\) 68%, rgba\(0,0,0,\.72\) 100%\)/s);
+test('Simulated curvature warps the actual UI plane with a real barrel displacement filter', () => {
+  const app = fs.readFileSync(new URL('../src/app/App.ts', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  assert.match(app, /crt-screen-plane/);
+  assert.match(app, /crt-barrel-filter/);
+  assert.match(app, /feDisplacementMap/);
+  assert.match(app, /crt-barrel-displacement/);
+  assert.match(app, /createCrtBarrelMap/);
+  assert.match(app, /Math\.pow\(curvature,\s*1\.[4-9]\)\s*\*\s*0\.0[45]/);
+  assert.match(css, /data-interface-mode='simulated'[^}]*data-has-curvature='true'[\s\S]*\.crt-screen-plane\s*\{[^}]*filter:\s*url\(#crt-barrel-filter\)/s);
+  assert.doesNotMatch(css, /data-interface-mode='simulated'[^}]*data-has-curvature='true'[^}]*\.workstation-shell[^}]*rotateX/s);
 });

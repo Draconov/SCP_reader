@@ -17,6 +17,35 @@ import { button, clear, el, formatTime } from './dom.js';
 
 export type ViewName = 'archive' | 'assignments' | 'mail' | 'bookmarks' | 'notes' | 'terminal' | 'profile' | 'settings' | 'help';
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+let crtBarrelMapDataUrl: string | null = null;
+
+function createCrtBarrelMap(): string {
+  if (crtBarrelMapDataUrl) return crtBarrelMapDataUrl;
+  const size = 192;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  if (!context) return '';
+  const image = context.createImageData(size, size);
+  for (let y = 0; y < size; y += 1) {
+    const ny = (y / (size - 1)) * 2 - 1;
+    for (let x = 0; x < size; x += 1) {
+      const nx = (x / (size - 1)) * 2 - 1;
+      const radial = Math.min(1, nx * nx + ny * ny);
+      const offset = (y * size + x) * 4;
+      image.data[offset] = Math.round((0.5 - nx * radial * 0.5) * 255);
+      image.data[offset + 1] = Math.round((0.5 - ny * radial * 0.5) * 255);
+      image.data[offset + 2] = 128;
+      image.data[offset + 3] = 255;
+    }
+  }
+  context.putImageData(image, 0, 0);
+  crtBarrelMapDataUrl = canvas.toDataURL('image/png');
+  return crtBarrelMapDataUrl;
+}
+
 export class App {
   private root: HTMLElement;
   private store: ProfileStore;
@@ -60,6 +89,57 @@ export class App {
     if (!this.profile) return;
     applySettingsToDocument(this.profile.settings);
     this.refreshDynamicStyleEffects();
+    this.updateCrtBarrelFilter();
+  }
+
+  private createCrtBarrelFilter(): SVGSVGElement {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.classList.add('crt-filter-defs');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('width', '0');
+    svg.setAttribute('height', '0');
+
+    const defs = document.createElementNS(SVG_NS, 'defs');
+    const filter = document.createElementNS(SVG_NS, 'filter');
+    filter.id = 'crt-barrel-filter';
+    filter.setAttribute('filterUnits', 'objectBoundingBox');
+    filter.setAttribute('primitiveUnits', 'objectBoundingBox');
+    filter.setAttribute('x', '-0.18');
+    filter.setAttribute('y', '-0.18');
+    filter.setAttribute('width', '1.36');
+    filter.setAttribute('height', '1.36');
+    filter.setAttribute('color-interpolation-filters', 'sRGB');
+
+    const map = document.createElementNS(SVG_NS, 'feImage');
+    map.setAttribute('href', createCrtBarrelMap());
+    map.setAttribute('x', '0');
+    map.setAttribute('y', '0');
+    map.setAttribute('width', '1');
+    map.setAttribute('height', '1');
+    map.setAttribute('preserveAspectRatio', 'none');
+    map.setAttribute('result', 'barrelMap');
+
+    const displacement = document.createElementNS(SVG_NS, 'feDisplacementMap');
+    displacement.id = 'crt-barrel-displacement';
+    displacement.setAttribute('in', 'SourceGraphic');
+    displacement.setAttribute('in2', 'barrelMap');
+    displacement.setAttribute('scale', '0');
+    displacement.setAttribute('xChannelSelector', 'R');
+    displacement.setAttribute('yChannelSelector', 'G');
+
+    filter.append(map, displacement);
+    defs.append(filter);
+    svg.append(defs);
+    return svg;
+  }
+
+  private updateCrtBarrelFilter(): void {
+    if (!this.profile) return;
+    const displacement = this.root.querySelector('#crt-barrel-displacement');
+    if (!(displacement instanceof Element)) return;
+    const curvature = getStyleEffects(this.profile.settings, 'simulated').curvature / 100;
+    const strength = Math.pow(curvature, 1.6) * 0.05;
+    displacement.setAttribute('scale', strength.toFixed(4));
   }
 
   private clearDynamicStyleEffects(): void {
@@ -308,20 +388,22 @@ export class App {
     clear(this.root);
     this.applyProfileAppearance();
     const shell = el('div', 'workstation-shell');
+    const screenPlane = el('div', 'crt-screen-plane');
     if (this.profile.settings.interfaceMode === 'simulated') {
+      shell.append(this.createCrtBarrelFilter());
       const scanlineUnderlay = el('div', 'crt-scanline-underlay');
       scanlineUnderlay.append(el('div', 'crt-scanline-sweep'));
-      shell.append(scanlineUnderlay);
+      screenPlane.append(scanlineUnderlay);
       const crtEffects = el('div', 'crt-effects');
       crtEffects.append(el('div', 'crt-scanlines'), el('div', 'crt-noise'));
-      shell.append(crtEffects);
+      screenPlane.append(crtEffects);
     }
     const top = el('header', 'topbar');
     const titleWrap = el('div', 'topbar-title');
     titleWrap.append(el('span', 'desktop-title', 'FOUNDATION RESEARCH NETWORK'), el('span', 'mobile-title', 'FOUNDATION FIELD TERMINAL'));
     top.append(titleWrap);
     top.append(el('div', 'topbar-meta', `${this.profile.researcher.personnelId} · ${this.profile.researcher.rank} · L${this.profile.researcher.clearance}`));
-    shell.append(top);
+    screenPlane.append(top);
 
     const workspace = el('div', 'workspace');
     const sidebar = el('nav', 'sidebar');
@@ -339,7 +421,7 @@ export class App {
     const main = el('main', 'main-window panel');
     this.renderCurrentView(main);
     workspace.append(main);
-    shell.append(workspace);
+    screenPlane.append(workspace);
 
     const mobileNav = el('nav', 'mobile-nav');
     const mobileNavItems: Array<[ViewName, string]> = [
@@ -351,9 +433,11 @@ export class App {
       nav.addEventListener('click', () => this.openView(view));
       mobileNav.append(nav);
     }
-    shell.append(mobileNav);
-    shell.append(el('footer', 'statusbar', `${this.status}  ·  ${networkStatusLabel(this.online)}  ·  ${new Date().toLocaleTimeString()}  ·  LOCAL PROFILE AUTOSAVE`));
+    screenPlane.append(mobileNav);
+    screenPlane.append(el('footer', 'statusbar', `${this.status}  ·  ${networkStatusLabel(this.online)}  ·  ${new Date().toLocaleTimeString()}  ·  LOCAL PROFILE AUTOSAVE`));
+    shell.append(screenPlane);
     this.root.append(shell);
+    this.updateCrtBarrelFilter();
     if (this.styleCustomizationMode) this.root.append(this.renderStyleCustomizationModal(this.styleCustomizationMode));
   }
 
