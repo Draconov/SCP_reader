@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'scp-reader-v4';
+const CACHE_VERSION = 'scp-reader-v5';
 const CORE = ['./', './index.html', './style.css', './manifest.webmanifest', './icon.svg', './archive/index.json'];
 
 self.addEventListener('install', (event) => {

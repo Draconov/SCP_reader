@@ -36,6 +36,15 @@ export function getStyleEffects(settings: ResearcherSettings, mode = settings.in
   return settings.styleEffects[mode] ?? DEFAULT_SETTINGS.styleEffects[mode];
 }
 
+export type SimulatedDynamicEffect = 'flicker' | 'runningScanline';
+
+export function isSimulatedDynamicEffectEnabled(settings: ResearcherSettings, effect: SimulatedDynamicEffect): boolean {
+  if (settings.interfaceMode !== 'simulated' || settings.reduceMotion) return false;
+  const effects = getStyleEffects(settings, 'simulated');
+  if (effects.randomEventFrequency <= 0) return false;
+  return effect === 'flicker' ? effects.flicker > 0 : effects.runningScanline > 0;
+}
+
 export function normalizeSettings(input: Partial<ResearcherSettings>): ResearcherSettings {
   const fontScale = typeof input.fontScale === 'number' && Number.isFinite(input.fontScale)
     ? Math.min(1.5, Math.max(0.8, input.fontScale))

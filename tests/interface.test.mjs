@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { normalizeSettings } from '../.test-build/settings/settings.js';
+import { isSimulatedDynamicEffectEnabled, normalizeSettings } from '../.test-build/settings/settings.js';
 
 test('settings keep only Normal/Simulated styles and clamp per-style effects', () => {
   const settings = normalizeSettings({
@@ -24,17 +24,74 @@ test('settings keep only Normal/Simulated styles and clamp per-style effects', (
   assert.equal(normalizeSettings({ interfaceMode: 'legacy' }).interfaceMode, 'normal');
 });
 
-test('Simulated mode defines CRT glass, bezel, random sweep treatment, and remains palette-independent', () => {
+test('Simulated mode defines CRT glass and bezel treatment while remaining palette-independent', () => {
   const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
   assert.match(css, /data-interface-mode='simulated'/);
   assert.match(css, /simulated[^}]*--fx-bezel/i);
   assert.match(css, /simulated[\s\S]*\.workstation-shell::before/);
   assert.match(css, /simulated[\s\S]*\.workstation-shell::after/);
-  assert.match(css, /data-scanline-sweep-active='true'/);
   assert.doesNotMatch(css, /data-interface-mode='simulated'\]\s*\{[^}]*--text:/);
+});
+
+test('every adjustable CRT overlay actually consumes its intensity variable', () => {
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  const app = fs.readFileSync(new URL('../src/app/App.ts', import.meta.url), 'utf8');
+  assert.match(app, /crt-scanlines/);
+  assert.match(app, /crt-noise/);
+  assert.match(app, /crt-scanline-sweep/);
+  assert.match(css, /crt-scanlines[\s\S]*var\(--fx-scanlines\)/);
+  assert.match(css, /crt-noise[\s\S]*var\(--fx-noise\)/);
+  assert.match(css, /crt-scanline-sweep[\s\S]*var\(--fx-running-scanline\)/);
+});
+
+test('reflection and vignette intensity can reach a true zero', () => {
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  assert.match(css, /workstation-shell::before\s*\{[\s\S]*?opacity:calc\(var\(--fx-reflection\)\s*\*/);
+  assert.match(css, /workstation-shell::after\s*\{[\s\S]*?opacity:calc\(var\(--fx-vignette\)\s*\*/);
+  assert.doesNotMatch(css, /opacity:calc\([^)]*\+\s*var\(--fx-(?:reflection|vignette)\)/);
+});
+
+test('CRT glow and bezel controls do not keep a built-in effect at zero', () => {
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  const simulated = css.slice(css.indexOf(":root[data-interface-mode='simulated'] body"), css.indexOf('@media (max-width: 760px)'));
+  assert.doesNotMatch(simulated, /calc\(\d+px\s*\+\s*var\(--fx-glow\)/);
+  assert.doesNotMatch(simulated, /calc\(\d+px\s*\+\s*var\(--fx-vignette\)/);
+  assert.match(simulated, /border:calc\(var\(--fx-bezel\)\s*\*/);
+});
+
+test('running CRT scanline travels completely from above to below the glass', () => {
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  assert.match(css, /@keyframes simulated-scanline\s*\{[\s\S]*from\s*\{\s*top:\s*-[1-9]\d*%[\s\S]*to\s*\{\s*top:\s*(?:10[1-9]|1[1-9]\d)%/);
+  assert.doesNotMatch(css, /@keyframes simulated-scanline[\s\S]{0,240}background-position/);
+});
+
+test('flicker is random-event driven rather than a fixed periodic animation', () => {
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  assert.doesNotMatch(css, /data-has-flicker='true'[^}]*animation\s*:\s*flicker/i);
+  assert.doesNotMatch(css, /@keyframes\s+flicker/i);
+  assert.match(css, /data-random-flicker-active='true'/);
+});
+
+test('dynamic CRT effects stop when Simulated mode or motion permission is no longer active', () => {
+  const settings = normalizeSettings({ interfaceMode: 'simulated' });
+  assert.equal(isSimulatedDynamicEffectEnabled(settings, 'flicker'), true);
+  assert.equal(isSimulatedDynamicEffectEnabled(settings, 'runningScanline'), true);
+  assert.equal(isSimulatedDynamicEffectEnabled(normalizeSettings({ ...settings, interfaceMode: 'normal' }), 'flicker'), false);
+  assert.equal(isSimulatedDynamicEffectEnabled(normalizeSettings({ ...settings, reduceMotion: true }), 'runningScanline'), false);
+  assert.equal(isSimulatedDynamicEffectEnabled(normalizeSettings({ ...settings, styleEffects: { ...settings.styleEffects, simulated: { ...settings.styleEffects.simulated, randomEventFrequency: 0 } } }), 'flicker'), false);
+  const app = fs.readFileSync(new URL('../src/app/App.ts', import.meta.url), 'utf8');
+  assert.match(app, /isSimulatedDynamicEffectEnabled/);
+});
+
+test('Simulated content surfaces derive from the active palette instead of fixed green-black values', () => {
+  const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
+  const simulated = css.slice(css.indexOf(":root[data-interface-mode='simulated'] body"), css.indexOf('@media (max-width: 760px)'));
+  for (const fixedGreen of ['#010a04ee', '#010603', '#010302', 'rgba(0, 13, 5, .62)', 'rgba(0,7,3,.68)', 'rgba(64,255,98,.025)', '#071409']) {
+    assert.equal(simulated.includes(fixedGreen), false, `Simulated CSS still contains fixed green surface ${fixedGreen}`);
+  }
 });
 
 test('service-worker cache revision advances with visual assets', () => {
   const sw = fs.readFileSync(new URL('../public/service-worker.js', import.meta.url), 'utf8');
-  assert.match(sw, /CACHE_VERSION = 'scp-reader-v4'/);
+  assert.match(sw, /CACHE_VERSION = 'scp-reader-v5'/);
 });

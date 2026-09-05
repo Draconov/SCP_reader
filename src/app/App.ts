@@ -8,7 +8,7 @@ import { DEFAULT_SETTINGS } from '../shared/constants.js';
 import { downloadProfile, readProfileFile } from '../researcher/export.js';
 import { addHistory, issueProfile } from '../researcher/profile.js';
 import { createProfileStore, type ProfileStore } from '../researcher/store.js';
-import { applySettingsToDocument, getStyleEffects, normalizeSettings } from '../settings/settings.js';
+import { applySettingsToDocument, getStyleEffects, isSimulatedDynamicEffectEnabled, normalizeSettings } from '../settings/settings.js';
 import { clearReaderCaches, networkStatusLabel } from '../offline/status.js';
 import { executeCommand } from '../terminal/commands.js';
 import { parseCommand } from '../terminal/parser.js';
@@ -81,9 +81,8 @@ export class App {
     const root = document.documentElement;
     const settings = this.profile.settings;
     const effects = getStyleEffects(settings);
-    if (settings.interfaceMode !== 'simulated' || settings.reduceMotion) return;
-    if (effects.flicker > 0 && effects.randomEventFrequency > 0) this.scheduleRandomFlicker(effects);
-    if (effects.runningScanline > 0 && effects.randomEventFrequency > 0) this.scheduleRunningScanline(effects);
+    if (isSimulatedDynamicEffectEnabled(settings, 'flicker')) this.scheduleRandomFlicker(effects);
+    if (isSimulatedDynamicEffectEnabled(settings, 'runningScanline')) this.scheduleRunningScanline(effects);
     root.dataset.randomFlickerActive = 'false';
     root.dataset.scanlineSweepActive = 'false';
   }
@@ -92,11 +91,15 @@ export class App {
     const frequency = effects.randomEventFrequency / 100;
     const delay = 2400 + (1 - frequency) * 3600 + Math.random() * 2600;
     this.flickerTimer = window.setTimeout(() => {
+      if (!this.profile || !isSimulatedDynamicEffectEnabled(this.profile.settings, 'flicker')) return;
+      const current = getStyleEffects(this.profile.settings, 'simulated');
       document.documentElement.dataset.randomFlickerActive = 'true';
-      const duration = 70 + Math.round(180 * Math.max(0.18, effects.flicker / 100));
+      const duration = 70 + Math.round(180 * Math.max(0.18, current.flicker / 100));
       this.flickerPulseTimer = window.setTimeout(() => {
         document.documentElement.dataset.randomFlickerActive = 'false';
-        if (this.profile) this.scheduleRandomFlicker(getStyleEffects(this.profile.settings, 'simulated'));
+        if (this.profile && isSimulatedDynamicEffectEnabled(this.profile.settings, 'flicker')) {
+          this.scheduleRandomFlicker(getStyleEffects(this.profile.settings, 'simulated'));
+        }
       }, duration);
     }, delay);
   }
@@ -105,11 +108,15 @@ export class App {
     const frequency = effects.randomEventFrequency / 100;
     const delay = 3600 + (1 - frequency) * 5200 + Math.random() * 3200;
     this.scanlineTimer = window.setTimeout(() => {
+      if (!this.profile || !isSimulatedDynamicEffectEnabled(this.profile.settings, 'runningScanline')) return;
+      const current = getStyleEffects(this.profile.settings, 'simulated');
       document.documentElement.dataset.scanlineSweepActive = 'true';
-      const duration = Math.round(8000 - (effects.runningScanlineSpeed / 100) * 6000);
+      const duration = Math.round(8000 - (current.runningScanlineSpeed / 100) * 6000);
       this.scanlinePulseTimer = window.setTimeout(() => {
         document.documentElement.dataset.scanlineSweepActive = 'false';
-        if (this.profile) this.scheduleRunningScanline(getStyleEffects(this.profile.settings, 'simulated'));
+        if (this.profile && isSimulatedDynamicEffectEnabled(this.profile.settings, 'runningScanline')) {
+          this.scheduleRunningScanline(getStyleEffects(this.profile.settings, 'simulated'));
+        }
       }, Math.max(1500, duration));
     }, delay);
   }
@@ -289,6 +296,11 @@ export class App {
     clear(this.root);
     this.applyProfileAppearance();
     const shell = el('div', 'workstation-shell');
+    if (this.profile.settings.interfaceMode === 'simulated') {
+      const crtEffects = el('div', 'crt-effects');
+      crtEffects.append(el('div', 'crt-scanlines'), el('div', 'crt-noise'), el('div', 'crt-scanline-sweep'));
+      shell.append(crtEffects);
+    }
     const top = el('header', 'topbar');
     const titleWrap = el('div', 'topbar-title');
     titleWrap.append(el('span', 'desktop-title', 'FOUNDATION RESEARCH NETWORK'), el('span', 'mobile-title', 'FOUNDATION FIELD TERMINAL'));
