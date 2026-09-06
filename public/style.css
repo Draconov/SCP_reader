@@ -232,9 +232,9 @@ input[type='range']:focus-visible::-moz-range-thumb { background:var(--text); }
 :root[data-interface-mode='simulated'] .crt-screen-plane { gap:7px; }
 :root[data-interface-mode='simulated'][data-has-curvature='true'] .crt-screen-plane {
   filter:url(#crt-barrel-filter);
-  transform:scale(calc(1 - var(--fx-curvature) * .065));
+  transform:none;
   transform-origin:50% 50%;
-  will-change:filter, transform;
+  will-change:filter;
 }
 :root[data-interface-mode='simulated'] .workstation-shell::before {
   content:'';

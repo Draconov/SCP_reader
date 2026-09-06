@@ -18,11 +18,51 @@ import { button, clear, el, formatTime } from './dom.js';
 export type ViewName = 'archive' | 'assignments' | 'mail' | 'bookmarks' | 'notes' | 'terminal' | 'profile' | 'settings' | 'help';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-let crtBarrelMapDataUrl: string | null = null;
+const crtBarrelMapCache = new Map<number, string>();
 
-function createCrtBarrelMap(): string {
-  if (crtBarrelMapDataUrl) return crtBarrelMapDataUrl;
-  const size = 192;
+function fastrisCrtWarpPoint(nx: number, ny: number, curvature: number): { x: number; y: number } {
+  const warp = 0.22 * curvature;
+  const margin = warp * 0.34;
+  const halfSpan = 1 - margin * 2;
+  const bendX = 1 - warp * ny * ny;
+  const bendY = 1 - warp * nx * nx;
+  return {
+    x: nx * halfSpan * bendX,
+    y: ny * halfSpan * bendY
+  };
+}
+
+function invertFastrisCrtWarpPoint(nx: number, ny: number, curvature: number): { x: number; y: number; inside: boolean } {
+  if (curvature <= 0) return { x: nx, y: ny, inside: true };
+  const warp = 0.22 * curvature;
+  const margin = warp * 0.34;
+  const halfSpan = Math.max(0.1, 1 - margin * 2);
+  let sourceX = Math.max(-1.2, Math.min(1.2, nx / halfSpan));
+  let sourceY = Math.max(-1.2, Math.min(1.2, ny / halfSpan));
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    const warped = fastrisCrtWarpPoint(sourceX, sourceY, curvature);
+    const errorX = nx - warped.x;
+    const errorY = ny - warped.y;
+    const a = halfSpan * (1 - warp * sourceY * sourceY);
+    const cross = -2 * warp * halfSpan * sourceX * sourceY;
+    const d = halfSpan * (1 - warp * sourceX * sourceX);
+    const determinant = a * d - cross * cross;
+    if (Math.abs(determinant) < 0.000001) break;
+    sourceX += (errorX * d - cross * errorY) / determinant;
+    sourceY += (a * errorY - cross * errorX) / determinant;
+  }
+  const warped = fastrisCrtWarpPoint(sourceX, sourceY, curvature);
+  const error = Math.hypot(warped.x - nx, warped.y - ny);
+  const inside = error < 0.001 && Math.abs(sourceX) <= 1.001 && Math.abs(sourceY) <= 1.001;
+  return { x: sourceX, y: sourceY, inside };
+}
+
+function createCrtBarrelMap(curvaturePercent: number): string {
+  const key = Math.max(0, Math.min(100, Math.round(curvaturePercent)));
+  const cached = crtBarrelMapCache.get(key);
+  if (cached) return cached;
+  const curvature = key / 100;
+  const size = 128;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -30,20 +70,35 @@ function createCrtBarrelMap(): string {
   if (!context) return '';
   const image = context.createImageData(size, size);
   for (let y = 0; y < size; y += 1) {
-    const ny = (y / (size - 1)) * 2 - 1;
+    const v = y / (size - 1);
+    const ny = v * 2 - 1;
     for (let x = 0; x < size; x += 1) {
-      const nx = (x / (size - 1)) * 2 - 1;
-      const radial = Math.min(1, nx * nx + ny * ny);
+      const u = x / (size - 1);
+      const nx = u * 2 - 1;
+      const source = invertFastrisCrtWarpPoint(nx, ny, curvature);
+      let sourceU = (source.x + 1) * 0.5;
+      let sourceV = (source.y + 1) * 0.5;
+      if (!source.inside) {
+        if (source.x < -1 || source.x > 1) sourceU = source.x < 0 ? -0.02 : 1.02;
+        if (source.y < -1 || source.y > 1) sourceV = source.y < 0 ? -0.02 : 1.02;
+        if (sourceU >= 0 && sourceU <= 1 && sourceV >= 0 && sourceV <= 1) {
+          if (Math.abs(nx) >= Math.abs(ny)) sourceU = nx < 0 ? -0.02 : 1.02;
+          else sourceV = ny < 0 ? -0.02 : 1.02;
+        }
+      }
+      const displacementX = sourceU - u;
+      const displacementY = sourceV - v;
       const offset = (y * size + x) * 4;
-      image.data[offset] = Math.round((0.5 - nx * radial * 0.5) * 255);
-      image.data[offset + 1] = Math.round((0.5 - ny * radial * 0.5) * 255);
+      image.data[offset] = Math.round(Math.max(0, Math.min(1, 0.5 + displacementX)) * 255);
+      image.data[offset + 1] = Math.round(Math.max(0, Math.min(1, 0.5 + displacementY)) * 255);
       image.data[offset + 2] = 128;
       image.data[offset + 3] = 255;
     }
   }
   context.putImageData(image, 0, 0);
-  crtBarrelMapDataUrl = canvas.toDataURL('image/png');
-  return crtBarrelMapDataUrl;
+  const dataUrl = canvas.toDataURL('image/png');
+  crtBarrelMapCache.set(key, dataUrl);
+  return dataUrl;
 }
 
 export class App {
@@ -111,7 +166,8 @@ export class App {
     filter.setAttribute('color-interpolation-filters', 'sRGB');
 
     const map = document.createElementNS(SVG_NS, 'feImage');
-    map.setAttribute('href', createCrtBarrelMap());
+    map.id = 'crt-barrel-map';
+    map.setAttribute('href', createCrtBarrelMap(0));
     map.setAttribute('x', '0');
     map.setAttribute('y', '0');
     map.setAttribute('width', '1');
@@ -123,7 +179,7 @@ export class App {
     displacement.id = 'crt-barrel-displacement';
     displacement.setAttribute('in', 'SourceGraphic');
     displacement.setAttribute('in2', 'barrelMap');
-    displacement.setAttribute('scale', '0');
+    displacement.setAttribute('scale', '1');
     displacement.setAttribute('xChannelSelector', 'R');
     displacement.setAttribute('yChannelSelector', 'G');
 
@@ -135,11 +191,10 @@ export class App {
 
   private updateCrtBarrelFilter(): void {
     if (!this.profile) return;
-    const displacement = this.root.querySelector('#crt-barrel-displacement');
-    if (!(displacement instanceof Element)) return;
-    const curvature = getStyleEffects(this.profile.settings, 'simulated').curvature / 100;
-    const strength = Math.pow(curvature, 1.6) * 0.05;
-    displacement.setAttribute('scale', strength.toFixed(4));
+    const map = this.root.querySelector('#crt-barrel-map');
+    if (!(map instanceof Element)) return;
+    const curvature = getStyleEffects(this.profile.settings, 'simulated').curvature;
+    map.setAttribute('href', createCrtBarrelMap(curvature));
   }
 
   private clearDynamicStyleEffects(): void {

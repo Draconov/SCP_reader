@@ -169,15 +169,17 @@ test('credential title visually balances the Foundation logo', () => {
   assert.match(css, /\.credential-title-group \.eyebrow\s*\{[^}]*font-size:\s*clamp\(\.76rem,[^,]+,\s*\.92rem\)/s);
 });
 
-test('Simulated curvature warps the actual UI plane with a real barrel displacement filter', () => {
+test('Simulated curvature follows the FasTris cross-axis CRT mesh math instead of radial warping', () => {
   const app = fs.readFileSync(new URL('../src/app/App.ts', import.meta.url), 'utf8');
   const css = fs.readFileSync(new URL('../public/style.css', import.meta.url), 'utf8');
   assert.match(app, /crt-screen-plane/);
   assert.match(app, /crt-barrel-filter/);
   assert.match(app, /feDisplacementMap/);
-  assert.match(app, /crt-barrel-displacement/);
-  assert.match(app, /createCrtBarrelMap/);
-  assert.match(app, /Math\.pow\(curvature,\s*1\.[4-9]\)\s*\*\s*0\.0[45]/);
+  assert.match(app, /const warp = 0\.22 \* curvature/);
+  assert.match(app, /const margin = warp \* 0\.34/);
+  assert.match(app, /const bendX = 1 - warp \* ny \* ny/);
+  assert.match(app, /const bendY = 1 - warp \* nx \* nx/);
+  assert.doesNotMatch(app, /nx \* radial|ny \* radial|Math\.pow\(curvature,\s*1\.[4-9]\)\s*\*\s*0\.0[45]/);
   assert.match(css, /data-interface-mode='simulated'[^}]*data-has-curvature='true'[\s\S]*\.crt-screen-plane\s*\{[^}]*filter:\s*url\(#crt-barrel-filter\)/s);
   assert.doesNotMatch(css, /data-interface-mode='simulated'[^}]*data-has-curvature='true'[^}]*\.workstation-shell[^}]*rotateX/s);
 });
