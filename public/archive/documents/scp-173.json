@@ -1,0 +1,32 @@
+{
+  "id": "en:scp-173",
+  "branch": "en",
+  "slug": "scp-173",
+  "title": "SCP-173",
+  "type": "scp",
+  "summary": "Item #: SCP-173 Object Class: Euclid Special Containment Procedures: Item SCP-173 is to be kept in a locked container at all times. When personnel must enter SCP-173's container, no fewer than 3 may enter at any time and the door is to be relocked behind them. At all times, two persons must maintain direct eye contact ",
+  "tags": [],
+  "clearance": 1,
+  "renderer": "foundation-document",
+  "objectClass": "Euclid",
+  "html": "<div id=\"page-content\">\n                        \n\n<div><div class=\"page-rate-widget-box\"><span class=\"rate-points\">rating:&nbsp;<span class=\"number prw54353\">+11036</span></span><span class=\"rateup btn btn-default\"><a title=\"I like it\" href=\"https://scp-wiki.wikidot.com/;\" target=\"_blank\" rel=\"noopener noreferrer\">+</a></span><span class=\"ratedown btn btn-default\"><a title=\"I don't like it\" href=\"https://scp-wiki.wikidot.com/;\" target=\"_blank\" rel=\"noopener noreferrer\">&#8211;</a></span><span class=\"cancel btn btn-default\"><a title=\"Cancel my vote\" href=\"https://scp-wiki.wikidot.com/;\" target=\"_blank\" rel=\"noopener noreferrer\">x</a></span></div></div>\n<p><strong>Item #:</strong> SCP-173</p>\n<p><strong>Object Class:</strong> Euclid</p>\n<p><strong>Special Containment Procedures:</strong> Item SCP-173 is to be kept in a locked container at all times. When personnel must enter SCP-173's container, no fewer than 3 may enter at any time and the door is to be relocked behind them. At all times, two persons must maintain direct eye contact with SCP-173 until all personnel have vacated and relocked the container.</p>\n<p><strong>Description:</strong> Moved to Site-19&#160;1993. Origin is as of yet unknown. It is constructed from concrete and rebar with traces of Krylon brand spray paint. SCP-173 is animate and extremely hostile. The object cannot move while within a direct line of sight. Line of sight must not be broken at any time with SCP-173. Personnel assigned to enter container are instructed to alert one another before blinking. Object is reported to attack by snapping the neck at the base of the skull, or by strangulation. In the event of an attack, personnel are to observe Class 4 hazardous object containment procedures.</p>\n<p>Personnel report sounds of scraping stone originating from within the container when no one is present inside. This is considered normal, and any change in this behaviour should be reported to the acting HMCL supervisor on duty.</p>\n<p>The reddish brown substance on the floor is a combination of feces and blood. Origin of these materials is unknown. The enclosure must be cleaned on a bi-weekly basis.</p>\n<div class=\"footer-wikiwalk-nav\">\n<div>\n<p>&#171; <a href=\"https://scp-wiki.wikidot.com/scp-172\" target=\"_blank\" rel=\"noopener noreferrer\">SCP-172</a> | SCP-173 | <a href=\"https://scp-wiki.wikidot.com/scp-174\" target=\"_blank\" rel=\"noopener noreferrer\">SCP-174</a> &#187;</p>\n</div>\n</div>\n<div class=\"licensebox\">\n<div class=\"collapsible-block\">\n<div class=\"collapsible-block-folded\"><a class=\"collapsible-block-link\" href=\"https://scp-wiki.wikidot.com/;\" target=\"_blank\" rel=\"noopener noreferrer\">‡&nbsp;Licensing&nbsp;/&nbsp;Citation</a></div>\n<div class=\"collapsible-block-unfolded\">\n<div class=\"collapsible-block-unfolded-link\"><a class=\"collapsible-block-link\" href=\"https://scp-wiki.wikidot.com/;\" target=\"_blank\" rel=\"noopener noreferrer\">‡&nbsp;Hide&nbsp;Licensing&nbsp;/&nbsp;Citation</a></div>\n<div class=\"collapsible-block-content\">\n<p>Cite this page as:</p>\n<div class=\"list-pages-box\">    <div class=\"list-pages-item\">\n\n\n<blockquote>\n<p>&quot;<a href=\"https://scp-wiki.wikidot.com/scp-173\" target=\"_blank\" rel=\"noopener noreferrer\">SCP-173</a>&quot; by Moto42, from the <a href=\"https://scpwiki.com/\" target=\"_blank\" rel=\"noopener noreferrer\">SCP Wiki</a>. Source: <a href=\"https://scpwiki.com/scp-173\" target=\"_blank\" rel=\"noopener noreferrer\">https://scpwiki.com/scp-173</a>. Licensed under <a href=\"https://creativecommons.org/licenses/by-sa/3.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY-SA</a>.</p>\n</blockquote>\n</div>\n    \n    \n    \n    </div>\n<p>For information on how to use this component, see the <a href=\"https://scp-wiki.wikidot.com/component:license-box\" target=\"_blank\" rel=\"noopener noreferrer\">License Box component</a>. To read about licensing policy, see the <a href=\"https://scp-wiki.wikidot.com/licensing-guide\" target=\"_blank\" rel=\"noopener noreferrer\">Licensing Guide</a>.</p>\n</div>\n</div>\n</div>\n</div>\n\n                    </div>",
+  "links": [
+    "scp-172",
+    "scp-174",
+    "scp-173",
+    "licensing-guide"
+  ],
+  "synchronized": true,
+  "attribution": {
+    "sourceUrl": "https://scp-wiki.wikidot.com/scp-173",
+    "sourceSite": "SCP Foundation Wiki",
+    "authors": [
+      "Moto42"
+    ],
+    "citation": "\" SCP-173 \" by Moto42, from the SCP Wiki . Source: https://scpwiki.com/scp-173 . Licensed under CC BY-SA .",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "revision": 57,
+    "fetchedAt": "2026-09-06T04:37:56.534Z"
+  }
+}
