@@ -1,0 +1,121 @@
+[
+  {
+    "id": "en:scp-049",
+    "branch": "en",
+    "slug": "scp-049",
+    "title": "SCP-049",
+    "type": "scp",
+    "summary": "Item #: SCP-049 Object Class: Euclid Special Containment Procedures: SCP-049 is contained within a Standard Secure Humanoid Containment Cell in Research Sector-02 at Site-19. SCP-049 must be sedated before any attempts to transport it. During transport, SCP-049 must be secured within a Class III Humanoid Restriction Ha",
+    "tags": [],
+    "clearance": 1,
+    "renderer": "specialized",
+    "objectClass": "Euclid"
+  },
+  {
+    "id": "en:scp-055",
+    "branch": "en",
+    "slug": "scp-055",
+    "title": "SCP-055",
+    "type": "scp",
+    "summary": "Item #: SCP-055 Object Class: Keter Special Containment Procedures: Object is kept within a five (5) by five (5) by two point five (2.5) meter square room constructed of cement (fifty (50) centimeter thickness), with a Faraday cage surrounding the cement walls. Access is via a heavy containment door measuring two (2) b",
+    "tags": [],
+    "clearance": 2,
+    "renderer": "foundation-document",
+    "objectClass": "Keter"
+  },
+  {
+    "id": "en:scp-087",
+    "branch": "en",
+    "slug": "scp-087",
+    "title": "SCP-087",
+    "type": "scp",
+    "summary": "Item #: SCP-087 Object Class: Euclid Special Containment Procedures: SCP-087 is located on the campus of [REDACTED]. The doorway leading to SCP-087 is constructed of reinforced steel with an electro-release lock mechanism. It has been disguised to resemble a janitorial closet consistent with the design of the building.",
+    "tags": [],
+    "clearance": 1,
+    "renderer": "specialized",
+    "objectClass": "Euclid"
+  },
+  {
+    "id": "en:scp-096",
+    "branch": "en",
+    "slug": "scp-096",
+    "title": "SCP-096",
+    "type": "scp",
+    "summary": "Item #: SCP-096 Object Class: Euclid Special Containment Procedures: SCP-096 is to be contained in its cell, a 5 m x 5 m x 5 m airtight steel cube, at all times. Weekly checks for any cracks or holes are mandatory. There are to be absolutely no video surveillance or optical tools of any kind inside SCP-096's cell. Secu",
+    "tags": [],
+    "clearance": 1,
+    "renderer": "foundation-document",
+    "objectClass": "Euclid"
+  },
+  {
+    "id": "en:scp-106",
+    "branch": "en",
+    "slug": "scp-106",
+    "title": "SCP-106",
+    "type": "scp",
+    "summary": "Item #: SCP-106 Object Class: Keter Special Containment Procedures: REVISION 11-6 - Hide No physical interaction with SCP-106 is allowed at any time. All physical interaction must be approved by no less than a two-thirds vote from O5-Command, and may only extend to testing situations. All staff (Research, Security, Cla",
+    "tags": [],
+    "clearance": 2,
+    "renderer": "foundation-document",
+    "objectClass": "Keter"
+  },
+  {
+    "id": "en:scp-173",
+    "branch": "en",
+    "slug": "scp-173",
+    "title": "SCP-173",
+    "type": "scp",
+    "summary": "Item #: SCP-173 Object Class: Euclid Special Containment Procedures: Item SCP-173 is to be kept in a locked container at all times. When personnel must enter SCP-173's container, no fewer than 3 may enter at any time and the door is to be relocked behind them. At all times, two persons must maintain direct eye contact ",
+    "tags": [],
+    "clearance": 1,
+    "renderer": "foundation-document",
+    "objectClass": "Euclid"
+  },
+  {
+    "id": "en:scp-682",
+    "branch": "en",
+    "slug": "scp-682",
+    "title": "SCP-682",
+    "type": "scp",
+    "summary": "Item #: SCP-682 Object Class: Keter Special Containment Procedures: SCP-682 must be destroyed as soon as possible. At this time, no means available to SCP teams are capable of destroying SCP-682, only able to cause massive physical damage. SCP-682 should be contained within a 5 m x 5 m x 5 m chamber with 25 cm reinforc",
+    "tags": [],
+    "clearance": 2,
+    "renderer": "foundation-document",
+    "objectClass": "Keter"
+  },
+  {
+    "id": "en:scp-914",
+    "branch": "en",
+    "slug": "scp-914",
+    "title": "SCP-914",
+    "type": "scp",
+    "summary": "Item #: SCP-914 Object Class: Safe Special Containment Procedures: Only personnel who submit a formal request and receive approval from site command may operate 914. SCP-914 is to be kept in research cell 109-B with two guard personnel on duty at all times. Any researchers entering 109-B are to be accompanied by at lea",
+    "tags": [],
+    "clearance": 1,
+    "renderer": "foundation-document",
+    "objectClass": "Safe"
+  },
+  {
+    "id": "en:scp-999",
+    "branch": "en",
+    "slug": "scp-999",
+    "title": "SCP-999",
+    "type": "scp",
+    "summary": "Item #: SCP-999 Object Class: Safe Special Containment Procedures: SCP-999 is allowed to freely roam the facility should it desire to, but otherwise must stay in its pen either between 8PM-9PM for sleeping, or during emergency lockdowns for its own safety. Subject is not allowed out of its pen at night or off facility ",
+    "tags": [],
+    "clearance": 1,
+    "renderer": "foundation-document",
+    "objectClass": "Safe"
+  },
+  {
+    "id": "en:scp-3008",
+    "branch": "en",
+    "slug": "scp-3008",
+    "title": "SCP-3008",
+    "type": "scp",
+    "summary": "Item #: SCP-3008 Object Class : Euclid Special Containment Procedures : The retail park containing SCP-3008 has been purchased by the Foundation and converted into Site-██. All public roads leading to or passing by Site-██ have been redirected. The entrance to SCP-3008 is to be monitored at all times, and no one is to ",
+    "tags": [],
+    "clearance": 1,
+    "renderer": "foundation-document"
+  }
+]
